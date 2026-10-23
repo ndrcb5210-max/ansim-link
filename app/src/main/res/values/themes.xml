@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 화면은 모두 Compose(Material 3)로 그리므로 플랫폼 테마는 액션바 없는 기본값만 쓴다. -->
+    <style name="Theme.AnsimLink" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
