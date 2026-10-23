@@ -1,0 +1,22 @@
+# Android / Gradle
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+.kotlin/
+# Secrets (never commit)
+app/google-services.json
+*.jks
+*.keystore
+keystore.properties
+service-account*.json
+# Firebase Functions
+functions/node_modules/
+functions/lib/
+# OS
+.DS_Store
+Thumbs.db
