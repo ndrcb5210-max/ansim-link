@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  적응형 아이콘. minSdk 26 이라 lint 는 -v26 한정자가 불필요하다고(ObsoleteSdkInt) 경고하지만,
+  한정자를 떼고 mipmap-anydpi 로 두면 AGP 리소스 병합에서 통째로 빠져
+  "resource mipmap/ic_launcher not found" 로 빌드가 깨진다. 그래서 -v26 을 유지한다.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>
