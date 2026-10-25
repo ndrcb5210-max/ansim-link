@@ -36,6 +36,19 @@ androidxCredentials = "1.6.0"    # minCompileSdk=35, 메타데이터 2.1.0
 googleid = "1.2.0"               # 1.2.1 은 메타데이터 2.4.0 이라 못 쓴다
 coroutines = "1.11.0"            # Task.await() 를 주는 kotlinx-coroutines-play-services
 
+# 3단계에서 추가. 고른 과정은 docs/devlog/03-alert-detection.md 에 적어 두었다.
+#
+# 1·2단계와 같은 방법으로 확인했다(AAR 의 aar-metadata.properties 로 minCompileSdk,
+# classes.jar 안 META-INF/*.kotlin_module 첫 바이트로 Kotlin 메타데이터 버전).
+#   room-runtime-android 2.8.5        minCompileSdk=34, 메타데이터 2.1.0
+#   datastore-preferences-android 1.3.0  minCompileSdk=34, 메타데이터 2.2.0
+#   sqlite-framework-android 2.6.2    minCompileSdk=34 (room 이 끌고 온다)
+# 둘 다 compileSdk 36 · Kotlin 2.2.21 에서 쓸 수 있다.
+room = "2.8.5"
+datastore = "1.3.0"
+# KSP 는 Kotlin 버전과 짝이 맞아야 한다. 2.2.21-2.0.5 가 Kotlin 2.2.21 용 최신이다.
+ksp = "2.2.21-2.0.5"
+
 junit = "4.13.2"
 androidxTestExtJunit = "1.3.0"
 robolectric = "4.17"             # API 23~37 지원
@@ -62,6 +75,14 @@ googleid = { group = "com.google.android.libraries.identity.googleid", name = "g
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 
+# 발동 기록을 담는 로컬 DB. Room 2.7 부터 코루틴(Flow) 지원이 room-runtime 에 들어 있어서
+# room-ktx 를 따로 넣지 않는다(room-runtime 2.8.5 가 kotlinx-coroutines-core 를 끌고 온다).
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+# 발동 규칙(문자 종류 × 재난 유형)을 담는 설정 저장소.
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+
 # Compose 는 BOM이 버전을 정하므로 개별 라이브러리에는 버전을 적지 않는다.
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
@@ -84,5 +105,7 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
+# Room 의 DAO·DB 구현을 만들어 준다(3단계).
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 # app/google-services.json 이 있을 때만 적용한다(app/build.gradle.kts 참고).
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
