@@ -15,6 +15,15 @@ object Routes {
     const val ACCOUNT = "settings/account"
     const val ACCOUNT_DELETE = "settings/account/delete"
 
+    // 3단계: 재난문자 감지
+    const val DETECTION_SETUP = "settings/detection"
+    const val TRIGGER_RULES = "settings/rules"
+    const val ALERT_LOG = "settings/alerts"
+
+    // 디버그 빌드에서만 들어갈 수 있다(설정 화면에 항목이 보이지 않는다).
+    const val DEBUG_TEST_ALERT = "settings/debug/test-alert"
+    const val DEBUG_OBSERVED_PACKAGES = "settings/debug/packages"
+
     const val LEGAL_ARG = "document"
     const val LEGAL_PATTERN = "legal/{$LEGAL_ARG}"
 
