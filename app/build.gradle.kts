@@ -181,6 +181,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
     // Firebase 가 돌려주는 Task 를 코루틴에서 await() 하기 위해 쓴다.
     implementation(libs.kotlinx.coroutines.play.services)
 
@@ -192,6 +193,10 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)
+
+    // 위치 공유와 안심 메시지. 4단계에서 추가.
+    implementation(libs.play.services.location)
+    implementation(libs.androidx.work.runtime)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     // Robolectric 단위 테스트에서 Compose 테스트용 Activity 를 쓰려면 매니페스트에 선언이 필요하다.
