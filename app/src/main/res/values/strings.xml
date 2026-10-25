@@ -12,6 +12,10 @@
     <string name="home_detection_title">재난문자 감지</string>
     <string name="home_detection_state_off">꺼짐</string>
     <string name="home_detection_description">아직 켜지 않았습니다. 감지를 켜려면 알림 접근 권한이 필요합니다. 휴대폰 기종·통신사·알림 설정에 따라 감지되지 않을 수 있습니다.</string>
+    <string name="home_detection_state_on">켜짐</string>
+    <string name="home_detection_description_on">재난문자 앱의 알림을 읽고 있습니다. 휴대폰 기종·통신사·알림 설정에 따라 감지되지 않을 수 있습니다.</string>
+    <string name="home_detection_open">감지 설정 열기</string>
+    <string name="home_last_event">마지막 감지 %1$s</string>
     <string name="home_sharing_title">위치 공유</string>
     <string name="home_sharing_state_idle">공유 중이 아님</string>
     <string name="home_sharing_description">지금은 위치를 수집하거나 보내지 않습니다. 공유는 내가 동의하고 시작할 때만 시작하며, 공유하는 동안에는 항상 알림을 보여 줍니다.</string>
@@ -153,6 +157,8 @@
     <string name="settings_detection_permission_description">알림 접근 권한을 켜고 끕니다.</string>
     <string name="settings_rules_title">발동 규칙</string>
     <string name="settings_rules_description">문자 종류와 재난 유형별로 발동 여부를 정합니다.</string>
+    <string name="settings_alert_log_title">발동 기록</string>
+    <string name="settings_alert_log_description">감지한 재난문자와 발동 여부를 봅니다.</string>
     <string name="settings_message_title">안심 메시지</string>
     <string name="settings_message_description">그룹에 보낼 메시지를 미리 적어 둡니다.</string>
     <string name="settings_subscription_title">구독</string>
@@ -160,4 +166,103 @@
     <string name="settings_account_title">계정</string>
     <string name="settings_account_description">로그인, 로그아웃, 계정 삭제.</string>
     <string name="settings_legal_title">약관과 방침</string>
+    <string name="settings_debug_title">개발용 (디버그 빌드)</string>
+    <string name="settings_debug_test_alert_title">테스트 재난문자 보내기</string>
+    <string name="settings_debug_test_alert_description">실제 재난문자 없이 감지·발동 흐름을 점검합니다.</string>
+    <string name="settings_debug_observed_title">받은 알림 패키지 기록</string>
+    <string name="settings_debug_observed_description">이 기기에서 알림을 띄운 앱의 패키지 이름을 봅니다.</string>
+
+    <!-- 알림 채널 -->
+    <string name="channel_trigger_name">재난문자 감지 알림</string>
+    <string name="channel_trigger_description">재난문자를 감지했을 때 위치를 공유할지 묻는 알림입니다.</string>
+    <string name="channel_debug_test_name">테스트 재난문자 (개발용)</string>
+    <string name="channel_debug_test_description">흐름 점검용 알림입니다. 실제 재난문자가 아닙니다.</string>
+    <string name="detection_service_label">재난문자 알림 읽기</string>
+
+    <!-- 감지했을 때 띄우는 알림 -->
+    <string name="trigger_notification_title">가족에게 내 위치를 공유할까요?</string>
+    <string name="trigger_notification_body">%1$s를 감지했습니다(유형: %2$s). 공유를 시작하면 안심 그룹 구성원에게 내 위치가 전달됩니다.</string>
+    <string name="trigger_action_share">공유 시작</string>
+    <string name="trigger_action_message_only">안심 메시지만 보내기</string>
+    <string name="trigger_action_dismiss">닫기</string>
+
+    <!-- 감지 설정 안내 -->
+    <string name="detection_setup_title">재난문자 감지</string>
+    <string name="detection_state_on">켜짐</string>
+    <string name="detection_state_off">꺼짐</string>
+    <string name="detection_state_granted_not_connected">권한은 켜졌지만 아직 연결되지 않았습니다</string>
+    <string name="detection_why_title">왜 알림 접근 권한이 필요한가요?</string>
+    <string name="detection_why_body">휴대폰이 받은 재난문자는 통신사가 보내는 ‘셀 방송’입니다. 일반 앱은 이 방송을 직접 받을 수 없고, 기본 재난문자 앱만 받을 수 있습니다. 그래서 안심연결은 그 앱이 띄운 알림을 읽어 재난문자가 왔다는 것을 압니다.</string>
+    <string name="detection_read_title">읽는 것</string>
+    <string name="detection_read_item_apps">아래 재난문자 앱이 띄운 알림만 읽습니다.</string>
+    <string name="detection_read_item_fields">그 알림의 제목(문자 종류)과 본문(재난 유형)을 읽습니다.</string>
+    <string name="detection_not_stored_title">저장하지 않는 것</string>
+    <string name="detection_not_stored_item_others">재난문자 앱이 아닌 앱의 알림은 앱 이름만 보고 바로 버립니다. 제목과 본문은 읽지 않습니다.</string>
+    <string name="detection_not_stored_item_body">재난문자 본문은 앞 %1$d자까지만 이 휴대폰 안에 기록하고, %2$d일이 지나면 지웁니다.</string>
+    <string name="detection_not_stored_item_server">알림 내용은 서버로 보내지 않습니다. 감지와 기록은 모두 이 휴대폰 안에서만 일어납니다.</string>
+    <string name="detection_target_packages_title">읽는 앱 목록</string>
+    <string name="detection_no_guarantee_title">알아 두실 점</string>
+    <string name="detection_no_guarantee_body">모든 재난문자를 감지한다고 보장할 수 없습니다. 휴대폰 기종, 통신사, 재난문자 앱의 알림 설정, 제조사가 바꾼 앱 이름에 따라 알림이 오지 않거나 모양이 달라 알아보지 못할 수 있습니다. Android 15 부터는 알림 내용이 가려져 올 수도 있습니다. 재난문자 자체는 휴대폰이 그대로 보여 주니 그쪽을 먼저 확인해 주세요.</string>
+    <string name="detection_open_settings">알림 접근 설정 열기</string>
+    <string name="detection_settings_not_found">이 기기에서는 알림 접근 설정 화면을 열 수 없었습니다. 설정 앱에서 ‘알림 접근’ 또는 ‘특수 앱 접근’을 찾아 주세요.</string>
+    <string name="detection_restricted_title">설정에서 켤 수 없나요?</string>
+    <string name="detection_restricted_body">스토어가 아닌 파일(APK)로 설치한 앱은 Android 13 부터 ‘제한된 설정’ 때문에 알림 접근을 바로 켤 수 없습니다. 아래 ‘앱 정보 열기’를 누른 뒤 오른쪽 위 더보기(⋮) &gt; ‘제한된 설정 허용’을 누르고, 다시 알림 접근 설정을 열어 주세요.</string>
+    <string name="detection_open_app_details">앱 정보 열기</string>
+    <string name="detection_post_notifications_title">알림 권한도 필요합니다</string>
+    <string name="detection_post_notifications_body">재난문자를 감지하면 ‘위치를 공유할까요?’ 알림으로 여쭤봅니다. 이 알림을 띄우려면 알림 권한이 필요합니다.</string>
+    <string name="detection_post_notifications_button">알림 권한 허용</string>
+    <string name="detection_post_notifications_granted">알림 권한이 켜져 있습니다.</string>
+
+    <!-- 발동 규칙 -->
+    <string name="rules_title">발동 규칙</string>
+    <string name="rules_intro">문자 종류마다 발동할지 정하고, 발동할 재난 유형을 골라 주세요. 발동하면 ‘위치를 공유할까요?’ 알림을 띄웁니다.</string>
+    <string name="rules_types_title">발동할 재난 유형</string>
+    <string name="rules_types_summary">%1$d / %2$d개 선택</string>
+    <string name="rules_select_all">모두 선택</string>
+    <string name="rules_clear_all">모두 해제</string>
+    <string name="rules_reset">기본값으로 되돌리기</string>
+    <string name="rules_notice_unknown_severity">‘새 경보’, ‘읽지 않은 경보 3개’처럼 본문이 없는 묶음 알림은 문자 종류를 알 수 없어 발동하지 않습니다.</string>
+    <string name="rules_notice_unknown_type">본문이 없거나 가려져서 재난 유형을 알 수 없을 때는 ‘기타’ 설정을 따릅니다.</string>
+    <string name="rules_notice_dedupe">같은 문자가 여러 번 오거나 언어별 사본이 와도 %1$d분 안에는 한 번만 발동합니다.</string>
+
+    <!-- 발동 기록 -->
+    <string name="alert_log_title">발동 기록</string>
+    <string name="alert_log_subtitle">최근 %1$d건까지 보여 줍니다.</string>
+    <string name="alert_log_empty_title">아직 기록이 없습니다</string>
+    <string name="alert_log_empty_description">재난문자 앱이 알림을 띄우면 여기에 쌓입니다. 디버그 빌드에서는 설정 &gt; 테스트 재난문자 보내기로 미리 확인할 수 있습니다.</string>
+    <string name="alert_log_clear">기록 모두 지우기</string>
+    <string name="alert_log_notice">본문은 앞 %1$d자까지만 기록하고 %2$d일이 지나면 지웁니다. 이 기록은 서버로 보내지 않습니다.</string>
+    <string name="alert_log_triggered">발동</string>
+    <string name="alert_log_not_triggered">발동 안 함</string>
+    <string name="alert_log_meta">%1$s · 신뢰도 %2$s</string>
+    <string name="alert_log_category">재난구분 %1$s</string>
+    <string name="alert_log_no_body">본문이 없는 알림입니다.</string>
+
+    <!-- 신뢰도 -->
+    <string name="confidence_high">높음</string>
+    <string name="confidence_medium">보통</string>
+    <string name="confidence_low">낮음</string>
+
+    <!-- 발동 여부의 이유 -->
+    <string name="reason_triggered">규칙에 맞아 발동했습니다.</string>
+    <string name="reason_severity_unknown">문자 종류를 알 수 없어 발동하지 않았습니다.</string>
+    <string name="reason_severity_disabled">이 문자 종류는 발동하지 않도록 설정돼 있습니다.</string>
+    <string name="reason_type_disabled">이 재난 유형은 선택되지 않았습니다.</string>
+    <string name="reason_duplicate_body">같은 내용으로 조금 전에 이미 발동했습니다.</string>
+    <string name="reason_duplicate_same_kind">같은 종류·유형으로 조금 전에 이미 발동했습니다.</string>
+
+    <!-- 받은 알림 패키지 기록 (디버그 전용) -->
+    <string name="observed_title">받은 알림 패키지 기록</string>
+    <string name="observed_intro">디버그 빌드에서만 쌓입니다. 재난문자 앱이 아닌 알림은 앱의 패키지 이름만 적고 제목·본문은 읽지 않습니다. 이 기기의 재난문자 앱 이름을 찾는 데 씁니다.</string>
+    <string name="observed_empty">아직 기록이 없습니다. 다른 앱의 알림이 오면 여기에 쌓입니다.</string>
+    <string name="observed_count">%1$d번 · 마지막 %2$s</string>
+    <string name="observed_clear">목록 지우기</string>
+    <string name="observed_known_badge">허용 목록</string>
+
+    <!-- 테스트 재난문자 (디버그 전용) -->
+    <string name="debug_test_alert_title">테스트 재난문자 보내기</string>
+    <string name="debug_test_alert_body">앱이 재난문자와 같은 모양의 알림을 직접 띄웁니다. 그 알림을 우리 리스너가 읽어 분류 → 규칙 → 기록 → 발동까지 가는지 확인할 수 있습니다. 실제 재난문자가 아닙니다.</string>
+    <string name="debug_test_alert_send">%1$s로 보내기</string>
+    <string name="debug_test_alert_sent">테스트 알림을 띄웠습니다. 알림창과 발동 기록을 확인해 주세요.</string>
+    <string name="debug_test_alert_failed">알림 권한이 꺼져 있어 띄울 수 없습니다. 감지 설정 화면에서 알림 권한을 켜 주세요.</string>
 </resources>
