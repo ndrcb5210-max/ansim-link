@@ -20,6 +20,17 @@ object Routes {
     const val TRIGGER_RULES = "settings/rules"
     const val ALERT_LOG = "settings/alerts"
 
+    // 4단계: 위치 공유와 안심 메시지
+    const val SHARE_SETTINGS = "settings/share"
+
+    /** 위치 권한을 요청하기 전에 보여 주는 설명 화면. */
+    const val LOCATION_DISCLOSURE = "settings/share/disclosure"
+    const val SAFETY_MESSAGE = "settings/message"
+    const val PROVISION_LOG = "settings/provision"
+
+    /** 가족 위치 보기. 알림의 [위치 보기]가 여기로 온다. */
+    const val FAMILY_LOCATION = "share/family"
+
     // 디버그 빌드에서만 들어갈 수 있다(설정 화면에 항목이 보이지 않는다).
     const val DEBUG_TEST_ALERT = "settings/debug/test-alert"
     const val DEBUG_OBSERVED_PACKAGES = "settings/debug/packages"

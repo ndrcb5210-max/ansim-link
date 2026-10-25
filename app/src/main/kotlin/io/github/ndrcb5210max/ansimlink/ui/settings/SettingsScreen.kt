@@ -23,8 +23,11 @@ import io.github.ndrcb5210max.ansimlink.ui.theme.AnsimLinkTheme
 /**
  * 설정 화면에 들어갈 항목.
  *
- * 3단계에서 '재난문자 감지 권한'·'발동 규칙'·'발동 기록'이 눌린다.
- * '안심 메시지'(4단계)와 '구독'(5단계)은 아직 자리만 있다.
+ * 4단계에서 '위치 공유'·'안심 메시지'·'내 위치 제공 기록'이 눌린다.
+ * '구독'(5단계)은 아직 자리만 있다.
+ *
+ * 순서는 '무엇이 일어나는가 → 무엇을 보낼 것인가 → 무엇이 일어났는가' 로 두었다.
+ * 감지 설정·발동 규칙(감지) → 위치 공유·안심 메시지(발동) → 발동 기록·제공 기록(확인).
  */
 private enum class SettingsEntry(
     @param:StringRes val titleRes: Int,
@@ -38,13 +41,21 @@ private enum class SettingsEntry(
         R.string.settings_rules_title,
         R.string.settings_rules_description,
     ),
-    AlertLog(
-        R.string.settings_alert_log_title,
-        R.string.settings_alert_log_description,
+    Share(
+        R.string.settings_share_title,
+        R.string.settings_share_description,
     ),
     SafetyMessage(
         R.string.settings_message_title,
         R.string.settings_message_description,
+    ),
+    AlertLog(
+        R.string.settings_alert_log_title,
+        R.string.settings_alert_log_description,
+    ),
+    ProvisionLog(
+        R.string.settings_provision_title,
+        R.string.settings_provision_description,
     ),
     Subscription(
         R.string.settings_subscription_title,
@@ -82,6 +93,9 @@ fun SettingsScreen(
     onOpenDetectionSetup: () -> Unit = {},
     onOpenRules: () -> Unit = {},
     onOpenAlertLog: () -> Unit = {},
+    onOpenShareSettings: () -> Unit = {},
+    onOpenSafetyMessage: () -> Unit = {},
+    onOpenProvisionLog: () -> Unit = {},
     onOpenAccount: () -> Unit = {},
     onOpenTestAlert: () -> Unit = {},
     onOpenObservedPackages: () -> Unit = {},
@@ -102,10 +116,13 @@ fun SettingsScreen(
                 onClick = when (entry) {
                     SettingsEntry.DetectionPermission -> onOpenDetectionSetup
                     SettingsEntry.Rules -> onOpenRules
+                    SettingsEntry.Share -> onOpenShareSettings
+                    SettingsEntry.SafetyMessage -> onOpenSafetyMessage
                     SettingsEntry.AlertLog -> onOpenAlertLog
+                    SettingsEntry.ProvisionLog -> onOpenProvisionLog
                     SettingsEntry.Account -> onOpenAccount
-                    // 4·5단계에서 연결한다.
-                    SettingsEntry.SafetyMessage, SettingsEntry.Subscription -> null
+                    // 5단계에서 연결한다.
+                    SettingsEntry.Subscription -> null
                 },
             )
         }

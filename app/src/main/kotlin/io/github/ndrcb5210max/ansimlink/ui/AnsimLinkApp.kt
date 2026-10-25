@@ -36,7 +36,10 @@ import androidx.navigation.compose.rememberNavController
 import io.github.ndrcb5210max.ansimlink.AppContainer
 import io.github.ndrcb5210max.ansimlink.BuildConfig
 import io.github.ndrcb5210max.ansimlink.R
+import io.github.ndrcb5210max.ansimlink.data.share.ProvisionPurpose
 import io.github.ndrcb5210max.ansimlink.domain.consent.LegalDocument
+import io.github.ndrcb5210max.ansimlink.service.NotificationAccess
+import io.github.ndrcb5210max.ansimlink.service.ShareController
 import io.github.ndrcb5210max.ansimlink.service.TestAlertPublisher
 import io.github.ndrcb5210max.ansimlink.ui.alert.AlertLogScreen
 import io.github.ndrcb5210max.ansimlink.ui.alert.AlertViewModel
@@ -55,8 +58,17 @@ import io.github.ndrcb5210max.ansimlink.ui.group.GroupViewModel
 import io.github.ndrcb5210max.ansimlink.ui.group.JoinGroupScreen
 import io.github.ndrcb5210max.ansimlink.ui.home.HomeScreen
 import io.github.ndrcb5210max.ansimlink.ui.legal.LegalDocumentScreen
+import io.github.ndrcb5210max.ansimlink.ui.message.SafetyMessageScreen
 import io.github.ndrcb5210max.ansimlink.ui.navigation.AnsimTab
 import io.github.ndrcb5210max.ansimlink.ui.navigation.Routes
+import io.github.ndrcb5210max.ansimlink.ui.share.FamilyLocationScreen
+import io.github.ndrcb5210max.ansimlink.ui.share.FamilyMemberItem
+import io.github.ndrcb5210max.ansimlink.ui.share.LocationDisclosureScreen
+import io.github.ndrcb5210max.ansimlink.ui.share.ProvisionLogScreen
+import io.github.ndrcb5210max.ansimlink.ui.share.ShareFormatting
+import io.github.ndrcb5210max.ansimlink.ui.share.ShareSettingsActions
+import io.github.ndrcb5210max.ansimlink.ui.share.ShareSettingsScreen
+import io.github.ndrcb5210max.ansimlink.ui.share.ShareViewModel
 import io.github.ndrcb5210max.ansimlink.ui.settings.AccountScreen
 import io.github.ndrcb5210max.ansimlink.ui.settings.AccountViewModel
 import io.github.ndrcb5210max.ansimlink.ui.settings.DeleteAccountScreen
@@ -70,9 +82,19 @@ private const val PLAY_SUBSCRIPTIONS_URL = "https://play.google.com/store/accoun
  *
  * Firebase 설정이 없거나 가짜여도 죽지 않는다. 그때는 로그인 화면에 '서버 설정이 필요합니다'
  * 안내가 뜨고 전송 버튼이 꺼진다.
+ *
+ * @param openGroupId 알림에서 '위치 보기'를 눌러 들어온 경우의 그룹 ID.
+ *   값이 있으면 가족 위치 보기 화면을 바로 연다.
+ * @param onOpenGroupHandled 그 화면을 열었다고 알린다. 그러지 않으면 뒤로 가기를
+ *   눌러도 다시 그 화면으로 돌아간다.
  */
 @Composable
-fun AnsimLinkApp(container: AppContainer, modifier: Modifier = Modifier) {
+fun AnsimLinkApp(
+    container: AppContainer,
+    modifier: Modifier = Modifier,
+    openGroupId: String? = null,
+    onOpenGroupHandled: () -> Unit = {},
+) {
     val serverReady = container.isServerReady
 
     val signedInUser by if (serverReady) {
@@ -89,7 +111,12 @@ fun AnsimLinkApp(container: AppContainer, modifier: Modifier = Modifier) {
     if (signedInUser == null) {
         AuthFlow(container = container, modifier = modifier)
     } else {
-        MainShell(container = container, modifier = modifier)
+        MainShell(
+            container = container,
+            modifier = modifier,
+            openGroupId = openGroupId,
+            onOpenGroupHandled = onOpenGroupHandled,
+        )
     }
 }
 
@@ -137,7 +164,12 @@ private fun AuthFlow(container: AppContainer, modifier: Modifier = Modifier) {
 
 /** 로그인 뒤 화면. 하단 탭과 그 위에 올라오는 화면들. */
 @Composable
-private fun MainShell(container: AppContainer, modifier: Modifier = Modifier) {
+private fun MainShell(
+    container: AppContainer,
+    modifier: Modifier = Modifier,
+    openGroupId: String? = null,
+    onOpenGroupHandled: () -> Unit = {},
+) {
     val navController = rememberNavController()
     val currentEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentEntry?.destination?.route
@@ -167,6 +199,27 @@ private fun MainShell(container: AppContainer, modifier: Modifier = Modifier) {
     }
     val detectionState by alertViewModel.detection.collectAsStateWithLifecycle()
 
+    val shareViewModel: ShareViewModel = viewModel {
+        ShareViewModel(
+            applicationContext = appContext,
+            authRepository = container.authRepository,
+            shareRepository = container.shareRepository,
+            provisionRecords = container.provisionRecordRepository,
+            settingsStore = container.shareSettingsStore,
+            messageStore = container.safetyMessageStore,
+            serverReady = container.isServerReady,
+        )
+    }
+
+    // 알림에서 '위치 보기'를 눌러 들어온 경우. 그 그룹의 가족 위치 보기로 보낸다.
+    LaunchedEffect(openGroupId) {
+        if (openGroupId != null) {
+            shareViewModel.loadFamily(openGroupId)
+            navController.navigate(Routes.FAMILY_LOCATION)
+            onOpenGroupHandled()
+        }
+    }
+
     AnsimTabScaffold(
         // 최상위 경로가 아니면(그룹 만들기, 계정 삭제 등) 하단 탭을 숨긴다.
         selectedTab = AnsimTab.entries.firstOrNull { it.route == currentRoute },
@@ -186,9 +239,25 @@ private fun MainShell(container: AppContainer, modifier: Modifier = Modifier) {
             modifier = Modifier.padding(innerPadding),
         ) {
             composable(AnsimTab.Home.route) {
+                val shareState by shareViewModel.share.collectAsStateWithLifecycle()
+                val context = LocalContext.current
+                // 권한을 설정에서 바꾸고 돌아올 수 있다. 돌아올 때마다 다시 읽는다.
+                LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+                    shareViewModel.refreshPermissions()
+                }
                 HomeScreen(
                     detecting = detectionState.detecting,
+                    share = shareState,
                     onOpenDetectionSetup = { navController.navigate(Routes.DETECTION_SETUP) },
+                    onStartSharing = {
+                        ShareController.start(context, ProvisionPurpose.ManualShare)
+                    },
+                    onStopSharing = { ShareController.stop(context) },
+                    onOpenFamilyLocation = {
+                        shareViewModel.loadFamily()
+                        navController.navigate(Routes.FAMILY_LOCATION)
+                    },
+                    onOpenShareSettings = { navController.navigate(Routes.SHARE_SETTINGS) },
                 )
             }
 
@@ -247,6 +316,9 @@ private fun MainShell(container: AppContainer, modifier: Modifier = Modifier) {
                     onOpenDetectionSetup = { navController.navigate(Routes.DETECTION_SETUP) },
                     onOpenRules = { navController.navigate(Routes.TRIGGER_RULES) },
                     onOpenAlertLog = { navController.navigate(Routes.ALERT_LOG) },
+                    onOpenShareSettings = { navController.navigate(Routes.SHARE_SETTINGS) },
+                    onOpenSafetyMessage = { navController.navigate(Routes.SAFETY_MESSAGE) },
+                    onOpenProvisionLog = { navController.navigate(Routes.PROVISION_LOG) },
                     onOpenAccount = { navController.navigate(Routes.ACCOUNT) },
                     onOpenTestAlert = { navController.navigate(Routes.DEBUG_TEST_ALERT) },
                     onOpenObservedPackages = {
@@ -261,6 +333,8 @@ private fun MainShell(container: AppContainer, modifier: Modifier = Modifier) {
                 viewModel = alertViewModel,
                 detectionState = detectionState,
             )
+
+            shareDestinations(navController = navController, viewModel = shareViewModel)
 
             composable(Routes.ACCOUNT) {
                 val state by accountViewModel.account.collectAsStateWithLifecycle()
@@ -426,6 +500,136 @@ private fun androidx.navigation.NavGraphBuilder.alertDestinations(
         )
     }
 }
+
+/**
+ * 4단계 화면들(위치 공유 설정·위치 권한 설명·안심 메시지·가족 위치·제공 기록).
+ *
+ * 권한 요청 런처를 각 화면 안에서 만든다. 화면 밖에 두면 어느 화면에서 요청했는지에 따라
+ * 돌아왔을 때 보여 줄 것이 달라지는데, 그 분기를 한곳에 모으면 읽기 어려워진다.
+ */
+private fun androidx.navigation.NavGraphBuilder.shareDestinations(
+    navController: NavHostController,
+    viewModel: ShareViewModel,
+) {
+    composable(Routes.SHARE_SETTINGS) {
+        val state by viewModel.settings.collectAsStateWithLifecycle()
+        val context = LocalContext.current
+        LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshPermissions() }
+
+        val requestLocation = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions(),
+        ) { viewModel.refreshPermissions() }
+        val requestNotifications = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { viewModel.refreshPermissions() }
+
+        ShareSettingsScreen(
+            state = state,
+            actions = ShareSettingsActions(
+                onShareMinutesChange = viewModel::setShareMinutes,
+                onOpenLocationDisclosure = {
+                    navController.navigate(Routes.LOCATION_DISCLOSURE)
+                },
+                // 자동 시작 흐름의 2단계. 공개 화면을 이미 읽은 상태라서 바로 요청한다.
+                onRequestLocationPermission = { requestLocation.launch(LOCATION_PERMISSIONS) },
+                // 3단계. 배경 위치는 런타임 대화상자로 받을 수 없어서 설정 화면으로 보낸다.
+                onOpenAppLocationSettings = { NotificationAccess.openAppDetails(context) },
+                onAcceptAutoStartDisclosure = viewModel::acceptAutoStartDisclosure,
+                onAutoStartChange = viewModel::setAutoStartEnabled,
+                onRequestNotificationPermission = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        // Android 12 이하에서는 런타임 권한이 아니다. 설정에서 켜야 한다.
+                        NotificationAccess.openAppDetails(context)
+                    }
+                },
+                onOpenProvisionLog = { navController.navigate(Routes.PROVISION_LOG) },
+                onBack = { navController.popBackStack() },
+            ),
+        )
+    }
+
+    composable(Routes.LOCATION_DISCLOSURE) {
+        val state by viewModel.settings.collectAsStateWithLifecycle()
+        LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshPermissions() }
+
+        val requestLocation = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions(),
+        ) { viewModel.refreshPermissions() }
+
+        LocationDisclosureScreen(
+            granted = state.locationPermissionGranted,
+            // 설명을 읽은 뒤에만 요청한다. 이 화면이 그 '읽음'이다.
+            onRequestPermission = { requestLocation.launch(LOCATION_PERMISSIONS) },
+            onBack = { navController.popBackStack() },
+        )
+    }
+
+    composable(Routes.SAFETY_MESSAGE) {
+        val state by viewModel.messages.collectAsStateWithLifecycle()
+        SafetyMessageScreen(
+            state = state,
+            onCommonChange = viewModel::setCommonMessage,
+            onTypeChange = viewModel::setTypeMessage,
+            onReset = viewModel::resetCommonMessage,
+            onBack = { navController.popBackStack() },
+        )
+    }
+
+    composable(Routes.PROVISION_LOG) {
+        val state by viewModel.provisionLog.collectAsStateWithLifecycle()
+        ProvisionLogScreen(state = state, onBack = { navController.popBackStack() })
+    }
+
+    composable(Routes.FAMILY_LOCATION) {
+        val state by viewModel.family.collectAsStateWithLifecycle()
+        val context = LocalContext.current
+        FamilyLocationScreen(
+            state = state,
+            onSelectGroup = viewModel::selectFamilyGroup,
+            onOpenMap = { member -> openInMapApp(context, member) },
+            onBack = { navController.popBackStack() },
+        )
+    }
+}
+
+/**
+ * 구성원의 위치를 기기에 깔린 지도 앱으로 연다.
+ *
+ * 지도 SDK 를 쓰지 않는 방법이다(CLAUDE.md 3장: API 키가 필요 없는 방식으로 시작한다).
+ * 지도 앱이 하나도 없는 기기에서는 [ActivityNotFoundException] 이 나므로 받아서 알린다.
+ */
+private fun openInMapApp(context: android.content.Context, member: FamilyMemberItem) {
+    val latitude = member.latitude ?: return
+    val longitude = member.longitude ?: return
+    val intent = Intent(
+        Intent.ACTION_VIEW,
+        ShareFormatting.geoUri(latitude, longitude, member.displayName).toUri(),
+    )
+    try {
+        context.startActivity(intent)
+    } catch (error: android.content.ActivityNotFoundException) {
+        android.widget.Toast.makeText(
+            context,
+            context.getString(R.string.family_no_map_app),
+            android.widget.Toast.LENGTH_SHORT,
+        ).show()
+        android.util.Log.w("ShareNav", "지도 앱이 없다", error)
+    }
+}
+
+/**
+ * 위치 권한 두 개를 같이 요청한다.
+ *
+ * 둘을 같이 넣는 이유: FINE 만 요청하면 사용자가 '대략적인 위치'를 고를 수 없다.
+ * 둘을 같이 넣으면 시스템이 '정확한 위치 / 대략적인 위치' 선택지를 보여 주고,
+ * 대략적인 위치만 줘도 우리 기능은 돌아간다(가족이 어디쯤 있나를 보여 주는 것이다).
+ */
+private val LOCATION_PERMISSIONS = arrayOf(
+    Manifest.permission.ACCESS_FINE_LOCATION,
+    Manifest.permission.ACCESS_COARSE_LOCATION,
+)
 
 /** 약관 보기 화면. 로그인 전·후 양쪽 그래프에 같이 넣는다. */
 private fun androidx.navigation.NavGraphBuilder.legalDestination(navController: NavHostController) {
