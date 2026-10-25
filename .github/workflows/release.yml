@@ -119,10 +119,22 @@ jobs:
         # AAB 는 서명을 건너뛰어도 이름이 `app-release.aab` 그대로다.
         # 서명 환경 변수에 오타가 있으면 app/build.gradle.kts 가 경고만 내고 넘어가므로
         # (빌드를 깨지 않는 쪽을 골랐다) 여기서 결과물을 직접 본다.
+        #
+        # 두 가지를 본다.
+        # ① 서명 블록이 들어 있는지 — zip 안을 직접 본다. 서명하지 않은 AAB 에는
+        #    META-INF/*.RSA 와 *.SF 가 없다(로컬에서 두 경우를 열어 확인했다).
+        # ② 서명이 유효한지 — jarsigner. **`-strict` 를 쓰지 않는다.** 업로드 키는
+        #    자체 서명(self-signed)이라 신뢰 체인을 검증할 수 없고, `-strict` 는 그
+        #    경고(chainNotValidated)를 0 이 아닌 종료 코드로 바꾼다. 정상적으로 서명한
+        #    AAB 에서도 실패하게 된다.
         run: |
           aab=app/build/outputs/bundle/release/app-release.aab
           test -f "$aab"
-          jarsigner -verify -strict "$aab"
+          if ! unzip -l "$aab" | grep -qE 'META-INF/[A-Z0-9_]+\.(RSA|DSA|EC)$'; then
+            echo "::error title=서명되지 않은 AAB::서명 블록이 없다. ANSIM_* 시크릿 이름과 값을 확인할 것."
+            exit 1
+          fi
+          jarsigner -verify "$aab"
           echo "서명 확인: OK"
 
       - name: AAB 올리기

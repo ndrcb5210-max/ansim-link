@@ -176,9 +176,15 @@ Pages 켠 날:
       ANSIM_KEY_PASSWORD=...
       ./gradlew bundleRelease
       ```
-      그 뒤 `jarsigner -verify -strict app/build/outputs/bundle/release/app-release.aab`
-      로 **정말 서명됐는지 확인한다**. AAB 는 서명하지 않아도 파일 이름이 그대로라서
+      그 뒤 **정말 서명됐는지 확인한다.** AAB 는 서명하지 않아도 파일 이름이 그대로라서
       눈으로는 구분되지 않는다
+      ```
+      unzip -l app/build/outputs/bundle/release/app-release.aab | grep "META-INF/.*\.RSA"
+      jarsigner -verify app/build/outputs/bundle/release/app-release.aab
+      ```
+      `jarsigner` 에 **`-strict` 를 붙이지 않는다.** 업로드 키는 자체 서명이라
+      신뢰 체인을 검증할 수 없고, `-strict` 는 그 경고를 0 이 아닌 종료 코드로 바꾼다
+      (정상적으로 서명한 AAB 에서도 실패한다)
 - [ ] GitHub 시크릿 4개를 넣는다 — `ANSIM_KEYSTORE_BASE64`, `ANSIM_KEYSTORE_PASSWORD`,
       `ANSIM_KEY_ALIAS`, `ANSIM_KEY_PASSWORD` (`.github/workflows/release.yml` 주석 참고)
 - [ ] `versionCode` 를 올린다(`app/build.gradle.kts`, 지금 1). Play 는 같은 값을 두 번 받지 않는다
