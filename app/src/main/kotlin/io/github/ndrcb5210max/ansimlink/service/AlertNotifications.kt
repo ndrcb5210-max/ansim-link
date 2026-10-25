@@ -1,12 +1,17 @@
 package io.github.ndrcb5210max.ansimlink.service
 
+import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import io.github.ndrcb5210max.ansimlink.MainActivity
 import io.github.ndrcb5210max.ansimlink.R
 import io.github.ndrcb5210max.ansimlink.domain.alert.AlertClassification
@@ -97,9 +102,32 @@ object AlertNotifications {
             )
             .build()
 
-        // POST_NOTIFICATIONS 가 없으면(사용자가 거절) 조용히 아무 일도 일어나지 않는다.
-        NotificationManagerCompat.from(context)
-            .notify(TRIGGER_NOTIFICATION_ID, notification)
+        // 권한을 거절했으면 알림은 뜨지 않는다. 그래도 발동 기록은 이미 남았으므로
+        // 발동 기록 화면에서 확인할 수 있다.
+        post(context, TRIGGER_NOTIFICATION_ID, notification)
+    }
+
+    /**
+     * 알림 하나를 띄운다. 권한이 없거나 사용자가 알림을 꺼 두었으면 아무 일도 하지 않는다.
+     *
+     * 권한 검사를 다른 함수로 빼지 않고 여기에 그대로 적은 이유: lint 의 MissingPermission
+     * 검사는 `notify` 를 부르는 **같은 함수 안에 있는** checkSelfPermission 만 알아본다.
+     * 검사를 helper 로 빼면 lint 가 오류를 낸다.
+     *
+     * @return 실제로 띄웠으면 true.
+     */
+    fun post(context: Context, id: Int, notification: Notification): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return false
+        }
+        val manager = NotificationManagerCompat.from(context)
+        // Android 12 이하에는 런타임 권한이 없다. 설정에서 알림을 껐는지만 볼 수 있다.
+        if (!manager.areNotificationsEnabled()) return false
+        manager.notify(id, notification)
+        return true
     }
 
     private fun openAppIntent(context: Context): PendingIntent = PendingIntent.getActivity(

@@ -2,7 +2,6 @@ package io.github.ndrcb5210max.ansimlink.service
 
 import android.content.Context
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import io.github.ndrcb5210max.ansimlink.BuildConfig
 import io.github.ndrcb5210max.ansimlink.R
 import io.github.ndrcb5210max.ansimlink.domain.alert.AlertPackages
@@ -27,7 +26,8 @@ object TestAlertPublisher {
         TestAlertSample(
             severity = AlertSeverity.Emergency,
             // 아래 본문은 모두 실제 재난문자의 문장 '형태'를 참고해 지어낸 예시다.
-            body = "[기상청] 10-25 05:12 경북 경주시 남남서쪽 19km 지역 " +
+            // 특정 문자를 옮긴 것이 아니므로 지역 이름은 ○○ 로 가렸다.
+            body = "[기상청] 10-25 05:12 경북 ○○시 남남서쪽 19km 지역 " +
                 "규모 4.2 지진발생/낙하물로부터 몸을 보호, 진동 멈춘 후 야외로 대피",
         ),
         TestAlertSample(
@@ -56,9 +56,6 @@ object TestAlertPublisher {
         if (!BuildConfig.DEBUG) return false
         AlertNotifications.ensureChannels(context)
 
-        val manager = NotificationManagerCompat.from(context)
-        if (!manager.areNotificationsEnabled()) return false
-
         val builder = NotificationCompat
             .Builder(context, AlertPackages.DEBUG_TEST_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_alert)
@@ -71,8 +68,11 @@ object TestAlertPublisher {
             builder.setStyle(NotificationCompat.BigTextStyle().bigText(body))
         }
 
-        manager.notify(AlertNotifications.DEBUG_TEST_NOTIFICATION_ID, builder.build())
-        return true
+        return AlertNotifications.post(
+            context,
+            AlertNotifications.DEBUG_TEST_NOTIFICATION_ID,
+            builder.build(),
+        )
     }
 }
 
