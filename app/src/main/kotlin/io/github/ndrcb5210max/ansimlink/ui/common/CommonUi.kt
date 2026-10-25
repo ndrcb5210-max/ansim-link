@@ -22,17 +22,20 @@ import io.github.ndrcb5210max.ansimlink.domain.group.PlanLimits
  * [AppError] 를 사용자에게 보여 줄 문구로 바꾼다.
  *
  * 한도 관련 오류는 숫자를 끼워 넣어야 해서 여기서 같이 만든다.
- * 2단계에는 결제가 없으므로 한도는 항상 무료 요금제 값이다.
+ *
+ * @param plan 지금 요금제. 한도 숫자가 달라진다('그룹은 1개까지' ↔ '3개까지').
+ *   요금제를 모르는 화면은 기본값([Plan.Free])을 쓴다 — 그 화면들은 한도 오류를
+ *   낼 수 없는 화면이다(로그인, 계정).
  */
 @Composable
-fun AppError.message(): String = when (this) {
+fun AppError.message(plan: Plan = Plan.Free): String = when (this) {
     AppError.GroupLimitReached -> stringResource(
         R.string.group_limit_reached,
-        PlanLimits.maxGroups(Plan.Free),
+        PlanLimits.maxGroups(plan),
     )
     AppError.GroupFull -> stringResource(
         R.string.group_full,
-        PlanLimits.maxMembers(Plan.Free),
+        PlanLimits.maxMembers(plan),
     )
     else -> stringResource(simpleMessageRes())
 }
@@ -84,9 +87,13 @@ fun ServerNotConfiguredCard(modifier: Modifier = Modifier) {
     }
 }
 
-/** 화면 위쪽에 띄우는 오류 안내. */
+/**
+ * 화면 위쪽에 띄우는 오류 안내.
+ *
+ * @param plan 한도 오류의 숫자를 정한다([message] 참고).
+ */
 @Composable
-fun ErrorCard(error: AppError, modifier: Modifier = Modifier) {
+fun ErrorCard(error: AppError, modifier: Modifier = Modifier, plan: Plan = Plan.Free) {
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -95,7 +102,7 @@ fun ErrorCard(error: AppError, modifier: Modifier = Modifier) {
         ),
     ) {
         Text(
-            text = error.message(),
+            text = error.message(plan),
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(16.dp),
         )

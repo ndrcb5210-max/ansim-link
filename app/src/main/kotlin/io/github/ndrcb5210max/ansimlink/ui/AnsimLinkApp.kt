@@ -178,6 +178,7 @@ private fun MainShell(
         GroupViewModel(
             authRepository = container.authRepository,
             groupRepository = container.groupRepository,
+            planProvider = container.planProvider,
             serverReady = container.isServerReady,
         )
     }
@@ -207,6 +208,7 @@ private fun MainShell(
             provisionRecords = container.provisionRecordRepository,
             settingsStore = container.shareSettingsStore,
             messageStore = container.safetyMessageStore,
+            planProvider = container.planProvider,
             serverReady = container.isServerReady,
         )
     }
@@ -287,11 +289,13 @@ private fun MainShell(
                 LaunchedEffect(state.createdGroupId) {
                     if (state.createdGroupId != null) navController.popBackStack()
                 }
+                val groupState by groupViewModel.state.collectAsStateWithLifecycle()
                 CreateGroupScreen(
                     state = state,
                     onNameChange = groupViewModel::setNewGroupName,
                     onSubmit = groupViewModel::createGroup,
                     onBack = { navController.popBackStack() },
+                    plan = groupState.plan,
                 )
             }
 

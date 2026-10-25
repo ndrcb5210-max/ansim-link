@@ -67,7 +67,7 @@ fun GroupScreen(
         if (!state.serverReady) {
             ServerNotConfiguredCard()
         }
-        state.error?.let { ErrorCard(it) }
+        state.error?.let { ErrorCard(it, plan = state.plan) }
 
         when {
             state.loading -> Text(
