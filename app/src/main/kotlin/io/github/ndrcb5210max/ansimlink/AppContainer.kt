@@ -17,7 +17,9 @@ import io.github.ndrcb5210max.ansimlink.data.auth.GoogleSignInClient
 import io.github.ndrcb5210max.ansimlink.data.group.FirestoreGroupRepository
 import io.github.ndrcb5210max.ansimlink.data.group.GroupRepository
 import io.github.ndrcb5210max.ansimlink.data.message.SafetyMessageStore
+import io.github.ndrcb5210max.ansimlink.data.share.FirestoreShareRepository
 import io.github.ndrcb5210max.ansimlink.data.share.ProvisionRecordRepository
+import io.github.ndrcb5210max.ansimlink.data.share.ShareRepository
 import io.github.ndrcb5210max.ansimlink.data.share.ShareSettingsStore
 
 /**
@@ -82,5 +84,10 @@ class AppContainer(private val applicationContext: Context) {
 
     val provisionRecordRepository: ProvisionRecordRepository by lazy {
         ProvisionRecordRepository(database.provisionRecords())
+    }
+
+    /** 위치 전송만 Firebase 가 필요하다. 설정이 없으면 건드리지 않는다. */
+    val shareRepository: ShareRepository by lazy {
+        FirestoreShareRepository(firestore)
     }
 }
