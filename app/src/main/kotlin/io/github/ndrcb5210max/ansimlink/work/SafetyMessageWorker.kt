@@ -14,7 +14,6 @@ import androidx.work.WorkerParameters
 import io.github.ndrcb5210max.ansimlink.AnsimLinkApplication
 import io.github.ndrcb5210max.ansimlink.domain.alert.AlertSeverity
 import io.github.ndrcb5210max.ansimlink.domain.alert.DisasterType
-import io.github.ndrcb5210max.ansimlink.domain.group.Plan
 import io.github.ndrcb5210max.ansimlink.domain.message.SafetyMessages
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
@@ -63,8 +62,11 @@ class SafetyMessageWorker(
         val sharing = inputData.getBoolean(KEY_SHARING, false)
 
         val messages = container.safetyMessageStore.messages.first()
-        // 요금제는 5단계에서 서버가 검증한 값으로 바꾼다. 지금은 항상 무료 한도로 본다.
-        val message = SafetyMessages.select(messages, type, Plan.Free)
+        // 요금제를 이 순간에 다시 읽는다(LocationShareService 와 같은 이유 — 작업이
+        // 돌 때 프로세스가 방금 깨어난 상태일 수 있다). 무료면 저장된 유형별 문구가
+        // 남아 있어도 쓰지 않는다. 그 판정은 SafetyMessages.select 가 한다.
+        val plan = container.planProvider.currentPlan()
+        val message = SafetyMessages.select(messages, type, plan)
 
         val groups = runCatching { container.shareRepository.myGroupsOnce(user.uid) }
             .getOrElse { error ->

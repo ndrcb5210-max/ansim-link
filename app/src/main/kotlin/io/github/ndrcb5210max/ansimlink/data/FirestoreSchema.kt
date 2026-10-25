@@ -7,7 +7,9 @@ package io.github.ndrcb5210max.ansimlink.data
  *
  * 구조
  * ```
- * users/{uid}                        displayName, email, consents{...}, createdAt
+ * users/{uid}                        displayName, email, consents{...}, createdAt,
+ *                                    entitlement{plan, state, productId, expiryTime,
+ *                                                autoRenewing, verifiedAt} — 서버만 쓴다
  * users/{uid}/pushTokens/{token}     platform, updatedAt — 계정 삭제 때 같이 지운다
  *
  * groups/{gid}                       name, ownerUid, memberUids[], createdAt
@@ -35,6 +37,16 @@ package io.github.ndrcb5210max.ansimlink.data
  * - `provisionLogs/{id}` 는 위치정보법 제19조③의 제공 내역이다. 기기 안 사본
  *   (Room `provision_records`)과 같은 내용이고, 여기에도 좌표를 담지 않는다.
  *
+ * 5단계에서 더한 것에 대한 메모
+ *
+ * - `users/{uid}.entitlement` 는 **서버만 쓴다.** 규칙에서 클라이언트 쓰기를 막는다
+ *   (`entitlementUnchanged()`). 앱이 쓸 수 있으면 APK 를 고친 사람이 자기 문서에
+ *   `state: "active"` 를 적어 프리미엄을 열 수 있다. 그 값이 바로 기능을 여는 근거라서
+ *   (CLAUDE.md 3장) '읽기 전용'이 규칙으로 보장되어야 한다.
+ * - 구매 토큰은 Firestore 에 두지 않는다. 앱이 callable 함수 `verifySubscription` 에
+ *   바로 넘기고, 서버가 Play 에 물어본 결과만 남는다. 토큰을 문서에 남기면 그것을 읽을 수
+ *   있는 모든 경로가 구독을 조작할 수 있는 경로가 된다.
+ *
  * `inviteCodes/{code}` 가 왜 따로 있나:
  * 초대 코드를 받은 사람은 아직 그룹 구성원이 아니라서 `groups/{gid}` 를 읽을 수 없다.
  * 코드만 가지고 그룹을 찾으려면 `invites` 를 컬렉션 그룹으로 조회해야 하는데,
@@ -58,6 +70,34 @@ object FirestoreSchema {
         const val CONSENT_ACCEPTED = "accepted"
         const val CONSENT_AT = "at"
         const val CONSENT_VERSION = "version"
+
+        /** 구독 상태. **서버만 쓴다**(위 클래스 주석 참고). */
+        const val ENTITLEMENT = "entitlement"
+    }
+
+    /**
+     * `users/{uid}.entitlement` 아래의 하위 필드.
+     *
+     * 같은 이름을 서버(`functions/src/schema.ts` 의 `EntitlementFields`)와
+     * 규칙(`firestore.rules`)도 쓴다. 셋을 같이 고쳐야 한다.
+     */
+    object Entitlements {
+        /** 요금제 이름. `free` 또는 `premium`. 화면에는 쓰지 않고 기록용으로 둔다. */
+        const val PLAN = "plan"
+
+        /** [io.github.ndrcb5210max.ansimlink.domain.billing.EntitlementState] 의 key. */
+        const val STATE = "state"
+        const val PRODUCT_ID = "productId"
+
+        /** 지금 결제 주기가 끝나는 시각(밀리초). */
+        const val EXPIRY_TIME = "expiryTime"
+        const val AUTO_RENEWING = "autoRenewing"
+
+        /** 서버가 마지막으로 Play 에 물어본 시각. */
+        const val VERIFIED_AT = "verifiedAt"
+
+        const val PLAN_FREE = "free"
+        const val PLAN_PREMIUM = "premium"
     }
 
     /** `users/{uid}/pushTokens/{token}`. 문서 ID 가 곧 FCM 토큰이다. */

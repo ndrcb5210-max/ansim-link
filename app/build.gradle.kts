@@ -198,6 +198,15 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.androidx.work.runtime)
 
+    // 구독 결제. 5단계에서 추가.
+    //
+    // `com.android.vending.BILLING` 권한과 ProxyBillingActivity 선언은 이 AAR 의
+    // 매니페스트에 들어 있어서 병합된다. app/src/main/AndroidManifest.xml 에 적지 않는다.
+    implementation(libs.play.billing)
+    // 구매 토큰 검증은 서버만 할 수 있다(Play Developer API 는 서비스 계정이 필요하다).
+    // 앱은 callable 함수 verifySubscription 을 부르고 결과는 Firestore 에서 읽는다.
+    implementation(libs.firebase.functions)
+
     debugImplementation(libs.androidx.compose.ui.tooling)
     // Robolectric 단위 테스트에서 Compose 테스트용 Activity 를 쓰려면 매니페스트에 선언이 필요하다.
     debugImplementation(libs.androidx.compose.ui.test.manifest)

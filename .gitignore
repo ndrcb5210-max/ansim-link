@@ -17,6 +17,11 @@ service-account*.json
 # Firebase Functions
 functions/node_modules/
 functions/lib/
+# 2세대 함수의 환경 변수(ANDROID_PACKAGE_NAME 등). 비밀은 아니지만 프로젝트마다 다르다.
+# 서비스 계정 키는 여기에 넣지 않는다 — Secret Manager 를 쓴다(functions/README.md).
+functions/.env
+functions/.env.*
+!functions/.env.example
 # 테스트용 컴파일 결과(tsconfig.test.json 이 여기로 내보낸다)
 functions/lib-test/
 functions/package-lock.json

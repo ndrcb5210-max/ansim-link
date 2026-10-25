@@ -51,6 +51,12 @@ import io.github.ndrcb5210max.ansimlink.ui.alert.TriggerRulesScreen
 import io.github.ndrcb5210max.ansimlink.ui.auth.AuthActions
 import io.github.ndrcb5210max.ansimlink.ui.auth.AuthScreen
 import io.github.ndrcb5210max.ansimlink.ui.auth.AuthViewModel
+import io.github.ndrcb5210max.ansimlink.ui.billing.BillingViewModel
+import io.github.ndrcb5210max.ansimlink.ui.billing.PaywallActions
+import io.github.ndrcb5210max.ansimlink.ui.billing.PaywallScreen
+import io.github.ndrcb5210max.ansimlink.ui.billing.SubscriptionActions
+import io.github.ndrcb5210max.ansimlink.ui.billing.SubscriptionScreen
+import io.github.ndrcb5210max.ansimlink.ui.billing.debugBillingDestination
 import io.github.ndrcb5210max.ansimlink.ui.group.CreateGroupScreen
 import io.github.ndrcb5210max.ansimlink.ui.group.GroupActions
 import io.github.ndrcb5210max.ansimlink.ui.group.GroupScreen
@@ -73,9 +79,6 @@ import io.github.ndrcb5210max.ansimlink.ui.settings.AccountScreen
 import io.github.ndrcb5210max.ansimlink.ui.settings.AccountViewModel
 import io.github.ndrcb5210max.ansimlink.ui.settings.DeleteAccountScreen
 import io.github.ndrcb5210max.ansimlink.ui.settings.SettingsScreen
-
-/** Google Play 구독 관리 화면. 계정 삭제 전 안내에서 연다(결제 코드는 5단계). */
-private const val PLAY_SUBSCRIPTIONS_URL = "https://play.google.com/store/account/subscriptions"
 
 /**
  * 앱의 가장 바깥. 로그인하지 않았으면 로그인·가입 화면을, 로그인했으면 탭 화면을 보여 준다.
@@ -178,6 +181,7 @@ private fun MainShell(
         GroupViewModel(
             authRepository = container.authRepository,
             groupRepository = container.groupRepository,
+            planProvider = container.planProvider,
             serverReady = container.isServerReady,
         )
     }
@@ -199,6 +203,17 @@ private fun MainShell(
     }
     val detectionState by alertViewModel.detection.collectAsStateWithLifecycle()
 
+    val billingViewModel: BillingViewModel = viewModel {
+        BillingViewModel(
+            authRepository = container.authRepository,
+            billing = container.billingRepository,
+            verifier = container.subscriptionVerifier,
+            planProvider = container.planProvider,
+            packageName = appContext.packageName,
+            serverReady = container.isServerReady,
+        )
+    }
+
     val shareViewModel: ShareViewModel = viewModel {
         ShareViewModel(
             applicationContext = appContext,
@@ -207,6 +222,7 @@ private fun MainShell(
             provisionRecords = container.provisionRecordRepository,
             settingsStore = container.shareSettingsStore,
             messageStore = container.safetyMessageStore,
+            planProvider = container.planProvider,
             serverReady = container.isServerReady,
         )
     }
@@ -287,11 +303,13 @@ private fun MainShell(
                 LaunchedEffect(state.createdGroupId) {
                     if (state.createdGroupId != null) navController.popBackStack()
                 }
+                val groupState by groupViewModel.state.collectAsStateWithLifecycle()
                 CreateGroupScreen(
                     state = state,
                     onNameChange = groupViewModel::setNewGroupName,
                     onSubmit = groupViewModel::createGroup,
                     onBack = { navController.popBackStack() },
+                    plan = groupState.plan,
                 )
             }
 
@@ -320,10 +338,12 @@ private fun MainShell(
                     onOpenSafetyMessage = { navController.navigate(Routes.SAFETY_MESSAGE) },
                     onOpenProvisionLog = { navController.navigate(Routes.PROVISION_LOG) },
                     onOpenAccount = { navController.navigate(Routes.ACCOUNT) },
+                    onOpenSubscription = { navController.navigate(Routes.SUBSCRIPTION) },
                     onOpenTestAlert = { navController.navigate(Routes.DEBUG_TEST_ALERT) },
                     onOpenObservedPackages = {
                         navController.navigate(Routes.DEBUG_OBSERVED_PACKAGES)
                     },
+                    onOpenFakeBilling = { navController.navigate(Routes.DEBUG_FAKE_BILLING) },
                     onOpenLegalDocument = { navController.navigate(Routes.legal(it)) },
                 )
             }
@@ -335,6 +355,11 @@ private fun MainShell(
             )
 
             shareDestinations(navController = navController, viewModel = shareViewModel)
+
+            billingDestinations(navController = navController, viewModel = billingViewModel)
+
+            // 디버그 빌드에서만 목적지가 생긴다(릴리스 소스셋의 같은 함수는 빈 함수다).
+            debugBillingDestination(navController)
 
             composable(Routes.ACCOUNT) {
                 val state by accountViewModel.account.collectAsStateWithLifecycle()
@@ -359,10 +384,12 @@ private fun MainShell(
                         accountViewModel.reauthenticate(activity ?: context)
                     },
                     onChoiceChange = accountViewModel::setChoice,
+                    // 계정 삭제 안내의 구독 링크. 결제 화면·설정 > 구독과 **같은 링크**를
+                    // 쓴다(BillingViewModel 이 상품 ID 를 넣어 만든 것). 세 군데가
+                    // 서로 다른 곳으로 가면 사용자가 해지 경로를 못 믿는다.
                     onOpenSubscriptions = {
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, PLAY_SUBSCRIPTIONS_URL.toUri()),
-                        )
+                        val url = billingViewModel.state.value.manageUrl
+                        context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
                     },
                     onDelete = accountViewModel::deleteAccount,
                     onBack = { navController.popBackStack() },
@@ -545,6 +572,8 @@ private fun androidx.navigation.NavGraphBuilder.shareDestinations(
                     }
                 },
                 onOpenProvisionLog = { navController.navigate(Routes.PROVISION_LOG) },
+                // 180분 칩이 꺼진 이유를 적고 풀 수 있는 곳으로 보낸다.
+                onOpenPaywall = { navController.navigate(Routes.PAYWALL) },
                 onBack = { navController.popBackStack() },
             ),
         )
@@ -591,6 +620,80 @@ private fun androidx.navigation.NavGraphBuilder.shareDestinations(
             onOpenMap = { member -> openInMapApp(context, member) },
             onBack = { navController.popBackStack() },
         )
+    }
+}
+
+/**
+ * 5단계 화면들(설정 > 구독, 결제 화면).
+ *
+ * 두 화면이 같은 ViewModel 과 같은 상태를 쓴다. 나눈 것은 보여 주는 내용뿐이다
+ * ([SubscriptionScreen] 주석 참고).
+ *
+ * 화면을 열 때마다 [BillingViewModel.refresh] 를 부른다. 상품 조회 말고도
+ * '확인하지 못한 구매 줍기'가 거기서 돌아간다 — 결제 직후 앱이 죽은 경우를
+ * 3일 안에 되살려야 한다(Play 가 그 뒤에 환불·취소한다).
+ */
+private fun androidx.navigation.NavGraphBuilder.billingDestinations(
+    navController: NavHostController,
+    viewModel: BillingViewModel,
+) {
+    composable(Routes.SUBSCRIPTION) {
+        val state by viewModel.state.collectAsStateWithLifecycle()
+        val context = LocalContext.current
+        // Play 구독 화면에서 해지하고 돌아올 수 있다. 돌아올 때마다 다시 확인한다.
+        LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
+
+        SubscriptionScreen(
+            state = state,
+            actions = SubscriptionActions(
+                onOpenPaywall = { navController.navigate(Routes.PAYWALL) },
+                onOpenManageSubscription = { openManageSubscription(context, state.manageUrl) },
+                onRecheck = viewModel::recheck,
+                onDismissNotice = viewModel::dismissNotice,
+                onBack = { navController.popBackStack() },
+            ),
+        )
+    }
+
+    composable(Routes.PAYWALL) {
+        val state by viewModel.state.collectAsStateWithLifecycle()
+        val context = LocalContext.current
+        val activity = LocalActivity.current
+        LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
+
+        PaywallScreen(
+            state = state,
+            actions = PaywallActions(
+                // 결제 흐름은 Activity 가 필요하다. 없으면 아무것도 하지 않는다
+                // (스크린샷 테스트처럼 Activity 없이 그려지는 경우가 있다).
+                onSubscribe = { activity?.let(viewModel::subscribe) },
+                onRetry = viewModel::retry,
+                onRecheck = viewModel::recheck,
+                onOpenManageSubscription = { openManageSubscription(context, state.manageUrl) },
+                onOpenLegalDocument = { navController.navigate(Routes.legal(it)) },
+                onDismissNotice = viewModel::dismissNotice,
+                onBack = { navController.popBackStack() },
+            ),
+        )
+    }
+}
+
+/**
+ * Google Play 구독 관리 화면을 연다.
+ *
+ * Play 스토어가 없는 기기(일부 태블릿·커스텀 롬)에서는 열 수 없다. 조용히 아무 일도
+ * 일어나지 않으면 사용자가 '해지 버튼이 고장났다'로 받아들이므로 이유를 알린다.
+ */
+private fun openManageSubscription(context: android.content.Context, url: String) {
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+    } catch (error: android.content.ActivityNotFoundException) {
+        android.widget.Toast.makeText(
+            context,
+            context.getString(R.string.billing_unavailable_play_store),
+            android.widget.Toast.LENGTH_LONG,
+        ).show()
+        android.util.Log.w("Billing", "Play 구독 화면을 열 수 없다", error)
     }
 }
 

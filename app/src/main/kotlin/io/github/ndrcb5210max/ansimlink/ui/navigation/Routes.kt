@@ -31,9 +31,16 @@ object Routes {
     /** 가족 위치 보기. 알림의 [위치 보기]가 여기로 온다. */
     const val FAMILY_LOCATION = "share/family"
 
+    // 5단계: 구독 결제
+    const val SUBSCRIPTION = "settings/subscription"
+
+    /** 결제 화면(paywall). 설정 > 구독과 공유 시간 안내 양쪽에서 들어온다. */
+    const val PAYWALL = "settings/subscription/paywall"
+
     // 디버그 빌드에서만 들어갈 수 있다(설정 화면에 항목이 보이지 않는다).
     const val DEBUG_TEST_ALERT = "settings/debug/test-alert"
     const val DEBUG_OBSERVED_PACKAGES = "settings/debug/packages"
+    const val DEBUG_FAKE_BILLING = "settings/debug/fake-billing"
 
     const val LEGAL_ARG = "document"
     const val LEGAL_PATTERN = "legal/{$LEGAL_ARG}"

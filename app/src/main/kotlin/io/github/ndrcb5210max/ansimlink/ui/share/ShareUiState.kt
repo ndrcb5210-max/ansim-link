@@ -40,10 +40,13 @@ data class ShareUiState(
  *
  * @param maxAllowedMinutes 이 요금제에서 고를 수 있는 최대값. 그보다 긴 칩은 꺼진 채로
  *   **같이 보여 준다**(프리미엄에 무엇이 있는지 숨기지 않는다).
+ * @param premium 프리미엄인지. 꺼진 칩 아래에 '구독하면 180분까지' 안내를 띄울지
+ *   정한다. 이미 프리미엄인 사람에게 그 안내를 보여 주면 안 된다.
  */
 data class ShareSettingsUiState(
     val shareMinutes: Int = 60,
     val maxAllowedMinutes: Int = 60,
+    val premium: Boolean = false,
     val autoStartEnabled: Boolean = false,
     val autoStartStep: AutoStartStep = AutoStartStep.Disclosure,
     val locationPermissionGranted: Boolean = false,
@@ -113,7 +116,7 @@ data class SafetyMessageUiState(
     val loading: Boolean = true,
     val common: String = "",
     val byType: Map<DisasterType, String> = emptyMap(),
-    /** 프리미엄이면 재난 유형별 입력란이 열린다. 5단계까지는 항상 false 다. */
+    /** 프리미엄이면 재난 유형별 입력란이 열린다. 서버가 검증한 구독 상태에서 나온다. */
     val premium: Boolean = false,
     /** 미리보기에 쓸 내 이름("엄마: 재난문자 받았어…"). */
     val senderName: String = "",

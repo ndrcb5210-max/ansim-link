@@ -36,6 +36,8 @@ fun CreateGroupScreen(
     onSubmit: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    /** 한도 오류 문구의 숫자를 정한다('그룹은 1개까지' ↔ '3개까지'). */
+    plan: Plan = Plan.Free,
 ) {
     Column(
         modifier = modifier
@@ -51,7 +53,7 @@ fun CreateGroupScreen(
             text = stringResource(R.string.create_group_title),
             style = MaterialTheme.typography.headlineSmall,
         )
-        state.error?.let { ErrorCard(it) }
+        state.error?.let { ErrorCard(it, plan = plan) }
 
         OutlinedTextField(
             value = state.name,

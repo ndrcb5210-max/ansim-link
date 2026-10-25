@@ -2,7 +2,7 @@
   "name": "ansim-link-functions",
   "version": "0.0.0",
   "private": true,
-  "description": "안심연결 Cloud Functions (그룹 푸시 발송, 세션 정리)",
+  "description": "안심연결 Cloud Functions (그룹 푸시 발송, 세션 정리, 구독 검증)",
   "type": "commonjs",
   "main": "lib/index.js",
   "engines": {
@@ -17,7 +17,8 @@
   },
   "dependencies": {
     "firebase-admin": "^13.0.0",
-    "firebase-functions": "^6.3.0"
+    "firebase-functions": "^6.3.0",
+    "googleapis": "^188.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

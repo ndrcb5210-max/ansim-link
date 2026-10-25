@@ -62,9 +62,11 @@ class FirestoreGroupRepository(
         ownerDisplayName: String,
         groupName: String,
         currentGroupCount: Int,
+        plan: Plan,
     ): String {
-        // 2단계에는 결제가 없으므로 항상 무료 한도로 본다(5단계에서 서버가 검증한 값으로 바꾼다).
-        val check = GroupLimits.canCreateGroup(Plan.Free, currentGroupCount)
+        // 요금제는 인자로 받는다. 저장소가 직접 읽으면 화면이 보여 주는 한도와
+        // 저장소가 적용하는 한도가 어긋날 수 있다(PlanProvider 주석 참고).
+        val check = GroupLimits.canCreateGroup(plan, currentGroupCount)
         if (check is LimitCheck.Blocked) throw AnsimException(AppError.GroupLimitReached)
 
         val name = groupName.trim()
@@ -97,12 +99,17 @@ class FirestoreGroupRepository(
         return groupRef.id
     }
 
-    override suspend fun createInvite(groupId: String, byUid: String): InviteLookup {
+    override suspend fun createInvite(
+        groupId: String,
+        byUid: String,
+        plan: Plan,
+    ): InviteLookup {
         val groupRef = firestore.collection(Groups.COLLECTION).document(groupId)
         val groupSnapshot = groupRef.get().await()
         val group = groupSnapshot.toAnsimGroup() ?: throw AnsimException(AppError.InviteNotFound)
 
-        val memberCheck = GroupLimits.canAddMember(Plan.Free, group.memberCount)
+        // 코드를 만드는 사람이 그룹 소유자다. 그 사람의 요금제로 인원 한도를 본다.
+        val memberCheck = GroupLimits.canAddMember(plan, group.memberCount)
         if (memberCheck is LimitCheck.Blocked && memberCheck.reason == LimitReason.MemberCount) {
             throw AnsimException(AppError.GroupFull)
         }

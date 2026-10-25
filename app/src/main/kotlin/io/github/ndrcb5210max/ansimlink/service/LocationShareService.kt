@@ -21,7 +21,6 @@ import io.github.ndrcb5210max.ansimlink.AnsimLinkApplication
 import io.github.ndrcb5210max.ansimlink.AppContainer
 import io.github.ndrcb5210max.ansimlink.R
 import io.github.ndrcb5210max.ansimlink.data.share.ProvisionPurpose
-import io.github.ndrcb5210max.ansimlink.domain.group.Plan
 import io.github.ndrcb5210max.ansimlink.domain.share.LocationPoint
 import io.github.ndrcb5210max.ansimlink.domain.share.LocationWriteRule
 import io.github.ndrcb5210max.ansimlink.domain.share.SharePolicy
@@ -189,12 +188,20 @@ class LocationShareService : Service() {
         }
 
         val settings = container.shareSettingsStore.settings.first()
-        // 요금제는 5단계에서 서버가 검증한 값으로 바꾼다. 지금은 항상 무료 한도로 본다.
+        // 요금제를 **이 순간에** 다시 읽는다. 흐름의 마지막 값을 쓰지 않는 이유:
+        // 발동은 앱이 닫혀 있을 때 일어나고, 그때 프로세스는 방금 깨어난 상태라
+        // 구독 상태 흐름이 아직 첫 값을 받지 못했을 수 있다. 초깃값인 무료를 쓰면
+        // 돈을 낸 사람이 60분만 공유하게 된다.
+        //
+        // 서버를 못 읽으면 무료다(막는 방향으로 틀린다). 저장된 180분은
+        // ShareDuration.effectiveMinutes 가 60분으로 내린다 — 구독을 해지한 뒤에도
+        // 저장된 값 때문에 180분 공유되지 않는다.
+        val plan = container.planProvider.currentPlan()
         val nowMillis = System.currentTimeMillis()
         val shareWindow = ShareWindow.start(
             nowMillis = nowMillis,
             requestedMinutes = settings.shareMinutes,
-            plan = Plan.Free,
+            plan = plan,
         )
 
         targets = SharePolicy.sharingTargets(candidateTargets)

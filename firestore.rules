@@ -66,8 +66,37 @@ service cloud.firestore {
     //
     // 본인만 읽고 쓴다. 그룹 화면에 보이는 이름은 users 가 아니라
     // groups/{gid}/members/{uid}.displayName 에서 가져오므로 남의 users 문서를 읽을 일이 없다.
+    //
+    // (5단계) 다만 `entitlement` 는 **클라이언트가 쓸 수 없다.** 그 값이 프리미엄을 여는
+    // 근거라서(CLAUDE.md 3장: 앱 단독 판단으로 기능을 열지 않는다) 앱이 쓸 수 있으면
+    // APK 를 고친 사람이 자기 문서에 state: "active" 를 적어 결제 없이 프리미엄을 쓴다.
+    // 서버(Admin SDK)는 보안 규칙을 통과하지 않으므로 verifySubscription 과 RTDN 함수는
+    // 이 조건과 무관하게 쓸 수 있다.
     match /users/{userId} {
-      allow read, write: if isSelf(userId);
+
+      // 생성·수정 양쪽에서 entitlement 가 들어오지 않았는지 본다.
+      //
+      // create 에서는 resource 가 없으므로 '필드가 아예 없어야 한다'로 본다.
+      // update 에서는 diff 로 '바뀌지 않았는지'만 본다. 'entitlement 가 없어야 한다'로
+      // 두면, 서버가 그 필드를 써 준 뒤에는 사용자가 자기 이름(displayName)도 바꿀 수
+      // 없게 된다 — update 의 request.resource.data 는 쓰고 난 뒤의 문서 전체이기 때문이다
+      // (4단계 '막힌 점' 2번에서 sharing 으로 똑같이 당했다).
+      function entitlementUntouchedOnCreate() {
+        return !('entitlement' in request.resource.data);
+      }
+
+      function entitlementUnchangedOnUpdate() {
+        return !request.resource.data.diff(resource.data)
+                  .affectedKeys().hasAny(['entitlement']);
+      }
+
+      allow get, list: if isSelf(userId);
+      allow create: if isSelf(userId) && entitlementUntouchedOnCreate();
+      allow update: if isSelf(userId) && entitlementUnchangedOnUpdate();
+
+      // 계정 삭제는 본인이 한다. 지우면 entitlement 도 같이 사라지는데, 그것으로
+      // 프리미엄을 얻을 수는 없다(문서가 없으면 무료다).
+      allow delete: if isSelf(userId);
 
       match /pushTokens/{token} {
         allow read, write: if isSelf(userId);
@@ -345,6 +374,17 @@ service cloud.firestore {
 
       allow update: if false;
       allow delete: if signedIn() && isGroupOwner(resource.data.groupId);
+    }
+
+    // ---- purchaseTokens ----
+    //
+    // (5단계) 구매 토큰의 SHA-256 → uid 매핑. **서버만 쓰고 읽는다.**
+    //
+    // 규칙이 없으면 기본이 거부이므로 이 블록이 없어도 막힌다. 그래도 적어 두는 이유:
+    // 나중에 이 컬렉션을 보고 '규칙이 없네, 빠뜨렸나' 하고 열어 주는 일을 막으려는 것이다.
+    // 서버(Admin SDK)는 보안 규칙을 통과하지 않으므로 함수는 그대로 쓸 수 있다.
+    match /purchaseTokens/{tokenHash} {
+      allow read, write: if false;
     }
   }
 }

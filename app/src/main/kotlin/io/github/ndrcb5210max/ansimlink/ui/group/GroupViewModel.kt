@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.ndrcb5210max.ansimlink.data.AppError
 import io.github.ndrcb5210max.ansimlink.data.auth.AuthRepository
+import io.github.ndrcb5210max.ansimlink.data.billing.PlanProvider
 import io.github.ndrcb5210max.ansimlink.data.group.GroupRepository
 import io.github.ndrcb5210max.ansimlink.data.toAppError
 import io.github.ndrcb5210max.ansimlink.domain.consent.TermsVersion
@@ -14,10 +15,17 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** 그룹 탭(목록·만들기·참여)의 상태를 들고 저장소를 부른다. */
+/**
+ * 그룹 탭(목록·만들기·참여)의 상태를 들고 저장소를 부른다.
+ *
+ * @param planProvider 요금제. 그룹 개수·인원 한도가 여기서 나온다. 화면에 보여 줄 때와
+ *   저장소를 부를 때 **같은 값**을 쓴다(둘이 갈라지면 '만들 수 있다고 했는데 거부당했다'
+ *   가 된다).
+ */
 class GroupViewModel(
     private val authRepository: AuthRepository,
     private val groupRepository: GroupRepository,
+    private val planProvider: PlanProvider,
     private val serverReady: Boolean,
 ) : ViewModel() {
 
@@ -38,6 +46,18 @@ class GroupViewModel(
 
     init {
         if (serverReady) observeGroups()
+        observePlan()
+    }
+
+    private fun observePlan() {
+        viewModelScope.launch {
+            planProvider.plan.collect { plan ->
+                _state.update { it.copy(plan = plan) }
+                // 참여 동의 화면의 '최대 몇 분 동안 제공됩니다' 문구도 요금제에 따라
+                // 달라진다. 두 상태가 같은 값을 보게 한곳에서 같이 넣는다.
+                _joinState.update { it.copy(plan = plan) }
+            }
+        }
     }
 
     private fun observeGroups() {
@@ -77,6 +97,9 @@ class GroupViewModel(
                     ownerDisplayName = user.label,
                     groupName = current.name,
                     currentGroupCount = _state.value.groups.size,
+                    // 흐름의 마지막 값이 아니라 지금 값을 다시 읽는다. 결제를 막 끝내고
+                    // 바로 그룹을 만드는 경우, 흐름이 아직 프리미엄을 못 받았을 수 있다.
+                    plan = planProvider.currentPlan(),
                 )
             }
             _createState.update {
@@ -96,7 +119,9 @@ class GroupViewModel(
 
     fun setJoinConsent(value: Boolean) = _joinState.update { it.copy(consentChecked = value) }
 
-    fun resetJoinState() = _joinState.update { JoinGroupUiState() }
+    // 요금제는 지우지 않는다. 화면을 다시 열 때 동의 문구의 분 수가 잠깐 60분으로
+    // 보였다가 180분으로 바뀌면 사용자가 무엇에 동의하는지 헷갈린다.
+    fun resetJoinState() = _joinState.update { JoinGroupUiState(plan = it.plan) }
 
     fun lookupInvite() {
         val current = _joinState.value
@@ -161,7 +186,11 @@ class GroupViewModel(
     // ---- 초대 코드 ----
 
     fun createInvite(groupId: String) = runOnGroups {
-        val invite = groupRepository.createInvite(groupId, _state.value.myUid)
+        val invite = groupRepository.createInvite(
+            groupId = groupId,
+            byUid = _state.value.myUid,
+            plan = planProvider.currentPlan(),
+        )
         _state.update { it.copy(freshInvite = invite) }
     }
 

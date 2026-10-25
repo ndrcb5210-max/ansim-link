@@ -41,6 +41,7 @@ data class ShareSettingsActions(
     val onAutoStartChange: (Boolean) -> Unit = {},
     val onRequestNotificationPermission: () -> Unit = {},
     val onOpenProvisionLog: () -> Unit = {},
+    val onOpenPaywall: () -> Unit = {},
     val onBack: () -> Unit = {},
 )
 
@@ -78,7 +79,11 @@ fun ShareSettingsScreen(
             style = MaterialTheme.typography.headlineSmall,
         )
 
-        DurationSection(state = state, onChange = actions.onShareMinutesChange)
+        DurationSection(
+            state = state,
+            onChange = actions.onShareMinutesChange,
+            onOpenPaywall = actions.onOpenPaywall,
+        )
 
         HorizontalDivider()
 
@@ -110,6 +115,7 @@ fun ShareSettingsScreen(
 private fun DurationSection(
     state: ShareSettingsUiState,
     onChange: (Int) -> Unit,
+    onOpenPaywall: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -138,7 +144,10 @@ private fun DurationSection(
                 )
             }
         }
-        if (state.maxAllowedMinutes < ShareDuration.MAX_MINUTES) {
+        // 꺼진 칩이 있으면 왜 꺼졌는지와 어디서 풀 수 있는지를 같이 적는다.
+        // 이유 없이 꺼진 버튼만 보여 주면 '고장인가' 하고 생각한다.
+        // 이미 프리미엄인 사람에게는 안내도 링크도 띄우지 않는다.
+        if (!state.premium && state.maxAllowedMinutes < ShareDuration.MAX_MINUTES) {
             Text(
                 text = stringResource(
                     R.string.share_duration_premium_note,
@@ -147,6 +156,9 @@ private fun DurationSection(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            TextButton(onClick = onOpenPaywall) {
+                Text(stringResource(R.string.share_duration_premium_cta))
+            }
         }
     }
 }

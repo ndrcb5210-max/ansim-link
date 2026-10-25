@@ -5,6 +5,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.ndrcb5210max.ansimlink.data.auth.AuthRepository
+import io.github.ndrcb5210max.ansimlink.data.billing.PlanProvider
 import io.github.ndrcb5210max.ansimlink.data.message.SafetyMessageStore
 import io.github.ndrcb5210max.ansimlink.data.model.GroupMember
 import io.github.ndrcb5210max.ansimlink.data.model.MemberLocation
@@ -55,6 +56,7 @@ class ShareViewModel(
     private val provisionRecords: ProvisionRecordRepository,
     private val settingsStore: ShareSettingsStore,
     private val messageStore: SafetyMessageStore,
+    private val planProvider: PlanProvider,
     private val serverReady: Boolean,
 ) : ViewModel() {
 
@@ -63,9 +65,6 @@ class ShareViewModel(
 
     // 'M월 d일 HH:mm' — 제공 기록용(며칠 전 기록도 본다).
     private val dateTimeFormat = SimpleDateFormat("M월 d일 HH:mm", Locale.KOREA)
-
-    /** 요금제. 5단계에서 서버가 검증한 값으로 바꾼다. 지금은 항상 무료다. */
-    private val plan = Plan.Free
 
     private val permissionState = MutableStateFlow(PermissionSnapshot())
 
@@ -105,10 +104,15 @@ class ShareViewModel(
     // ---- 위치 공유 설정 ----
 
     val settings: StateFlow<ShareSettingsUiState> =
-        combine(settingsStore.settings, permissionState) { stored, permissions ->
+        combine(
+            settingsStore.settings,
+            permissionState,
+            planProvider.plan,
+        ) { stored, permissions, plan ->
             ShareSettingsUiState(
                 shareMinutes = stored.shareMinutes,
                 maxAllowedMinutes = PlanLimits.maxShareMinutes(plan),
+                premium = plan == Plan.Premium,
                 autoStartEnabled = stored.autoStartEnabled,
                 autoStartStep = AutoStartFlow.nextStep(
                     disclosureAccepted = stored.autoStartDisclosureAccepted,
@@ -127,8 +131,8 @@ class ShareViewModel(
 
     // ---- 안심 메시지 ----
 
-    val messages: StateFlow<SafetyMessageUiState> = messageStore.messages
-        .map { set ->
+    val messages: StateFlow<SafetyMessageUiState> =
+        combine(messageStore.messages, planProvider.plan) { set, plan ->
             SafetyMessageUiState(
                 loading = false,
                 common = set.common,

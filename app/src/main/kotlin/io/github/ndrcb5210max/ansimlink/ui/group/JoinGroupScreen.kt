@@ -65,7 +65,7 @@ fun JoinGroupScreen(
             text = stringResource(R.string.join_group_title),
             style = MaterialTheme.typography.headlineSmall,
         )
-        state.error?.let { ErrorCard(it) }
+        state.error?.let { ErrorCard(it, plan = state.plan) }
 
         OutlinedTextField(
             value = state.code,
@@ -91,6 +91,7 @@ fun JoinGroupScreen(
         } else {
             LocationConsentCard(
                 invite = state.invite,
+                plan = state.plan,
                 checked = state.consentChecked,
                 onCheckedChange = onConsentChange,
             )
@@ -108,6 +109,7 @@ fun JoinGroupScreen(
 @Composable
 private fun LocationConsentCard(
     invite: InviteLookup,
+    plan: Plan,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -126,7 +128,7 @@ private fun LocationConsentCard(
                 text = stringResource(
                     R.string.join_group_consent_summary,
                     invite.groupName,
-                    PlanLimits.maxShareMinutes(Plan.Free),
+                    PlanLimits.maxShareMinutes(plan),
                 ),
                 style = MaterialTheme.typography.bodyMedium,
             )

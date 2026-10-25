@@ -1,8 +1,12 @@
 package io.github.ndrcb5210max.ansimlink.domain.group
 
 /**
- * 요금제. 실제 구독 판정은 5단계(결제)에서 서버가 검증한 값을 읽어 정한다.
- * 2단계에서는 항상 [Free] 로 본다.
+ * 요금제.
+ *
+ * [Premium] 은 **서버가 검증한** 구독 상태에서만 나온다
+ * ([io.github.ndrcb5210max.ansimlink.domain.billing.Entitlement.planAt]).
+ * 앱이 Play Billing 응답만 보고 이 값을 만들지 않는다 — 기기에서 만들 수 있는 값으로
+ * 기능을 열면 APK 를 고친 사람이 결제 없이 프리미엄을 쓴다(CLAUDE.md 3장).
  */
 enum class Plan { Free, Premium }
 
