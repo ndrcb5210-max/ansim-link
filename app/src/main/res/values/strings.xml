@@ -20,6 +20,133 @@
     <string name="group_empty_title">아직 그룹이 없습니다</string>
     <string name="group_empty_description">안심 그룹을 만들고 초대 코드를 가족에게 보내 주세요. 초대받은 사람이 직접 동의해야 그룹에 들어옵니다.</string>
     <string name="group_create">그룹 만들기</string>
+    <string name="group_join">초대 코드로 참여</string>
+    <string name="group_loading">불러오는 중…</string>
+    <string name="group_member_count">구성원 %1$d명 / 최대 %2$d명</string>
+    <string name="group_owner_badge">내가 만든 그룹</string>
+    <string name="group_invite_create">초대 코드 만들기</string>
+    <string name="group_invite_title">초대 코드</string>
+    <string name="group_invite_valid">%1$d분 동안 쓸 수 있습니다.</string>
+    <string name="group_invite_help">이 코드를 초대할 사람에게 직접 전해 주세요. 코드를 받은 사람은 동의 화면을 거쳐야 그룹에 들어옵니다.</string>
+    <string name="group_invite_copy">코드 복사</string>
+    <string name="group_members_title">구성원</string>
+    <string name="group_my_share_title">내 공유 상태</string>
+    <string name="group_my_share_description">언제든지 바꿀 수 있고 바로 반영됩니다.</string>
+    <string name="group_share_state_consented">동의함</string>
+    <string name="group_share_state_paused">일시중지</string>
+    <string name="group_share_state_withdrawn">동의 철회</string>
+    <string name="group_action_pause">일시중지</string>
+    <string name="group_action_resume">다시 공유</string>
+    <string name="group_action_withdraw">동의 철회하고 나가기</string>
+    <string name="group_withdraw_confirm_title">동의를 철회할까요?</string>
+    <string name="group_withdraw_confirm_message">이 그룹에서 나가고, 이 그룹에 남아 있는 내 구성원 정보와 위치를 지웁니다. 다시 들어오려면 초대 코드를 새로 받아야 합니다.</string>
+    <string name="group_owner_cannot_withdraw">내가 만든 그룹입니다. 먼저 설정 &gt; 계정 &gt; 계정 삭제 화면에서 소유권을 넘기거나 그룹을 해산해 주세요.</string>
+    <string name="group_limit_reached">무료 요금제에서는 그룹을 %1$d개까지 만들 수 있습니다. 프리미엄 구독은 나중 단계에서 준비합니다.</string>
+    <string name="group_full">무료 요금제에서는 한 그룹에 %1$d명까지 들어올 수 있습니다.</string>
+
+    <!-- 그룹 만들기 -->
+    <string name="create_group_title">그룹 만들기</string>
+    <string name="create_group_name_label">그룹 이름</string>
+    <string name="create_group_name_hint">예: 우리 가족</string>
+    <string name="create_group_notice">그룹을 만들면 내 위치를 이 그룹 구성원에게 제공하는 데 동의한 것으로 기록합니다. 나중에 그룹 화면에서 일시중지하거나 철회할 수 있습니다.</string>
+    <string name="create_group_submit">만들기</string>
+
+    <!-- 그룹 참여 -->
+    <string name="join_group_title">초대 코드로 참여</string>
+    <string name="join_group_code_label">초대 코드 6자리</string>
+    <string name="join_group_lookup">코드 확인</string>
+    <string name="join_group_consent_title">위치 제공에 동의해 주세요</string>
+    <string name="join_group_consent_summary">‘%1$s’ 그룹 구성원에게, 재난문자가 감지되어 공유를 시작했을 때, 최대 %2$d분 동안 내 위치(위도·경도·시각)가 제공됩니다.</string>
+    <string name="join_group_receivers_title">제공받는 사람</string>
+    <string name="join_group_receivers_note">초대 코드를 만든 시점의 구성원입니다. 참여한 뒤에는 그룹 화면에서 지금 구성원을 언제든 확인할 수 있습니다.</string>
+    <string name="join_group_consent_checkbox">위 내용을 확인했고, 이 그룹 구성원에게 내 위치를 제공하는 데 동의합니다.</string>
+    <string name="join_group_consent_withdrawable">동의는 그룹 화면에서 언제든 일시중지하거나 철회할 수 있습니다.</string>
+    <string name="join_group_submit">동의하고 참여</string>
+
+    <!-- 로그인·가입 -->
+    <string name="auth_title">안심연결 시작하기</string>
+    <string name="auth_mode_sign_in">로그인</string>
+    <string name="auth_mode_sign_up">가입</string>
+    <string name="auth_email_label">이메일</string>
+    <string name="auth_password_label">비밀번호</string>
+    <string name="auth_password_confirm_label">비밀번호 확인</string>
+    <string name="auth_display_name_label">이름(그룹에서 보일 이름)</string>
+    <string name="auth_sign_in_submit">로그인</string>
+    <string name="auth_sign_up_submit">가입하기</string>
+    <string name="auth_forgot_password">비밀번호를 잊으셨나요?</string>
+    <string name="auth_password_reset_sent">비밀번호 재설정 메일을 보냈습니다. 메일함을 확인해 주세요.</string>
+    <string name="auth_verification_sent">인증 메일을 보냈습니다. 메일함을 확인해 주세요.</string>
+    <string name="auth_google_sign_in">Google 계정으로 계속하기</string>
+    <string name="auth_google_needs_consent">Google 계정으로 처음 시작할 때도 아래 동의가 모두 필요합니다.</string>
+    <string name="auth_email_error_empty">이메일을 입력해 주세요.</string>
+    <string name="auth_email_error_malformed">이메일 형식이 올바르지 않습니다.</string>
+    <string name="auth_password_error_empty">비밀번호를 입력해 주세요.</string>
+    <string name="auth_password_error_short">비밀번호는 %1$d자 이상이어야 합니다.</string>
+    <string name="auth_password_error_mismatch">비밀번호가 서로 다릅니다.</string>
+
+    <!-- 동의 -->
+    <string name="consent_section_title">동의</string>
+    <string name="consent_accept_all">전체 동의</string>
+    <string name="consent_required_mark">(필수)</string>
+    <string name="consent_age_over_14">만 14세 이상입니다</string>
+    <string name="consent_terms_of_service">이용약관에 동의합니다</string>
+    <string name="consent_privacy_policy">개인정보 처리방침에 동의합니다</string>
+    <string name="consent_location_terms">위치기반서비스 이용약관에 동의합니다</string>
+    <string name="consent_view_document">보기</string>
+    <string name="consent_missing_notice">필수 항목에 모두 체크해야 가입할 수 있습니다. 뒤로 가기는 동의가 아닙니다.</string>
+
+    <!-- 약관 화면 -->
+    <string name="legal_terms_title">이용약관</string>
+    <string name="legal_privacy_title">개인정보 처리방침</string>
+    <string name="legal_location_title">위치기반서비스 이용약관</string>
+    <string name="legal_version">약관 버전 %1$s</string>
+
+    <!-- 계정 -->
+    <string name="account_title">계정</string>
+    <string name="account_email_verified">이메일 인증 완료</string>
+    <string name="account_email_unverified">이메일 인증이 아직 안 되었습니다.</string>
+    <string name="account_resend_verification">인증 메일 다시 보내기</string>
+    <string name="account_sign_out">로그아웃</string>
+    <string name="account_delete">계정 삭제</string>
+    <string name="account_delete_title">계정 삭제</string>
+    <string name="account_delete_warning">계정을 지우면 되돌릴 수 없습니다. 계정 정보, 동의 기록, 그룹 구성원 정보, 위치, 푸시 토큰을 모두 지웁니다.</string>
+    <string name="account_delete_retained">위치정보법 제16조에 따라 ‘누구에게·언제·무슨 목적으로 제공했는지’ 기록은 6개월 동안 남습니다. 이 기록에는 위치 좌표가 들어 있지 않습니다.</string>
+    <string name="account_delete_subscription_title">구독을 쓰고 계신가요?</string>
+    <string name="account_delete_subscription_body">계정을 지워도 Google Play 구독은 자동으로 해지되지 않습니다. 먼저 구독을 해지해 주세요.</string>
+    <string name="account_delete_subscription_link">구독 관리 열기</string>
+    <string name="account_delete_reauth_title">본인 확인</string>
+    <string name="account_delete_reauth_password">비밀번호를 다시 입력해 주세요.</string>
+    <string name="account_delete_reauth_google">Google 계정으로 다시 로그인해 주세요.</string>
+    <string name="account_delete_reauth_submit">확인</string>
+    <string name="account_delete_owned_groups_title">내가 만든 그룹 처리</string>
+    <string name="account_delete_owned_groups_body">다른 구성원이 남아 있는 그룹입니다. 그룹마다 어떻게 할지 골라 주세요.</string>
+    <string name="account_delete_choice_disband">그룹 해산</string>
+    <string name="account_delete_choice_transfer">소유권 넘기기</string>
+    <string name="account_delete_submit">영구 삭제</string>
+    <string name="account_delete_done">계정을 삭제했습니다.</string>
+
+    <!-- 서버 설정 안내 -->
+    <string name="server_not_configured_title">서버 설정이 필요합니다</string>
+    <string name="server_not_configured_body">이 빌드에는 Firebase 설정(google-services.json)이 들어 있지 않거나 자리표시자 값입니다. 로그인·그룹 기능은 동작하지 않습니다. 화면 구성만 확인할 수 있습니다.</string>
+
+    <!-- 공통 -->
+    <string name="common_cancel">취소</string>
+    <string name="common_back">뒤로</string>
+    <string name="common_close">닫기</string>
+
+    <!-- 오류 문구 -->
+    <string name="error_network">네트워크에 연결할 수 없습니다. 연결을 확인하고 다시 시도해 주세요.</string>
+    <string name="error_email_already_in_use">이미 가입한 이메일입니다. 로그인해 주세요.</string>
+    <string name="error_invalid_credentials">이메일 또는 비밀번호가 맞지 않습니다.</string>
+    <string name="error_weak_password">비밀번호가 너무 쉽습니다. 더 길게 만들어 주세요.</string>
+    <string name="error_recent_login_required">보안을 위해 다시 로그인한 뒤 진행해 주세요.</string>
+    <string name="error_permission_denied">권한이 없어 처리하지 못했습니다.</string>
+    <string name="error_invite_not_found">그런 초대 코드가 없습니다. 코드를 다시 확인해 주세요.</string>
+    <string name="error_invite_expired">만료된 초대 코드입니다. 새 코드를 받아 주세요.</string>
+    <string name="error_already_member">이미 이 그룹의 구성원입니다.</string>
+    <string name="error_google_unavailable">Google 로그인을 쓸 수 없습니다. 기기에 Google 계정이 있는지 확인해 주세요.</string>
+    <string name="error_google_cancelled">Google 로그인을 취소했습니다.</string>
+    <string name="error_unknown">처리하지 못했습니다. 잠시 뒤 다시 시도해 주세요.</string>
 
     <!-- 설정 -->
     <string name="settings_detection_permission_title">재난문자 감지 권한</string>
@@ -32,4 +159,5 @@
     <string name="settings_subscription_description">무료·프리미엄 한도를 확인합니다.</string>
     <string name="settings_account_title">계정</string>
     <string name="settings_account_description">로그인, 로그아웃, 계정 삭제.</string>
+    <string name="settings_legal_title">약관과 방침</string>
 </resources>

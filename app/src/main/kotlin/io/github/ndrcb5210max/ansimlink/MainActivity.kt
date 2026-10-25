@@ -11,9 +11,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val container = (application as AnsimLinkApplication).container
+
         setContent {
             AnsimLinkTheme {
-                AnsimLinkApp()
+                AnsimLinkApp(container = container)
             }
         }
     }

@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  1단계(뼈대)에서는 권한을 하나도 선언하지 않는다.
+  2단계까지도 위험 권한은 하나도 선언하지 않는다. 로그인·그룹·동의는 네트워크만 쓰고,
+  INTERNET 권한은 Firebase SDK 매니페스트에서 병합되어 들어온다.
   알림 접근(재난문자 감지)은 3단계, 위치는 4단계에서 설명 화면을 먼저 보여 준 뒤 추가한다.
   SEND_SMS / READ_SMS 는 어떤 단계에서도 추가하지 않는다.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
+        android:name=".AnsimLinkApplication"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"

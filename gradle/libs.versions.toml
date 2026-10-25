@@ -22,6 +22,20 @@ androidxActivity = "1.13.0"      # minCompileSdk=36
 androidxLifecycle = "2.10.0"     # 2.11.0 은 minCompileSdk=37
 androidxNavigation = "2.9.8"     # 2.10.2 는 minCompileSdk=37
 
+# 2단계에서 추가. 고른 과정은 docs/devlog/02-auth-consent.md 에 적어 두었다.
+#
+# 여기서는 compileSdk 36 말고 제약이 하나 더 있다. 1단계에서 Kotlin 을 2.2.21 로 묶었는데
+# (Compose 컴파일러 플러그인 2.3+ 가 AGP 9.2+ 를 요구해서), Kotlin 2.2 컴파일러는
+# .kotlin_module 메타데이터 2.3.0 까지만 읽는다. 최신 Firebase BoM 35.1.0 의
+# firebase-auth 25.0.0 은 메타데이터 2.4.0 이라 컴파일이 깨진다.
+# 그래서 각 AAR 의 classes.jar 안 META-INF/*.kotlin_module 첫 바이트로 메타데이터 버전을 직접 확인하고,
+# 2.3.0 이하인 것 중 가장 최신을 골랐다.
+firebaseBom = "34.19.0"          # auth 24.2.0(메타 2.3.0) / firestore 26.6.0(1.9.0) / common 22.2.1(1.9.0)
+googleServices = "4.5.0"         # google-services Gradle 플러그인. AGP 8.13.2 에서 동작 확인
+androidxCredentials = "1.6.0"    # minCompileSdk=35, 메타데이터 2.1.0
+googleid = "1.2.0"               # 1.2.1 은 메타데이터 2.4.0 이라 못 쓴다
+coroutines = "1.11.0"            # Task.await() 를 주는 kotlinx-coroutines-play-services
+
 junit = "4.13.2"
 androidxTestExtJunit = "1.3.0"
 robolectric = "4.17"             # API 23~37 지원
@@ -31,7 +45,22 @@ roborazzi = "1.77.0"
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidxCore" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "androidxActivity" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "androidxLifecycle" }
+androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "androidxNavigation" }
+
+# Firebase 는 BoM 이 버전을 정하므로 개별 라이브러리에 버전을 적지 않는다.
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+
+# Google 로그인: Credential Manager + Sign in with Google
+androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "androidxCredentials" }
+androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "androidxCredentials" }
+googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
+
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 
 # Compose 는 BOM이 버전을 정하므로 개별 라이브러리에는 버전을 적지 않는다.
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
@@ -55,3 +84,5 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
+# app/google-services.json 이 있을 때만 적용한다(app/build.gradle.kts 참고).
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
