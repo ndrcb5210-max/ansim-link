@@ -71,25 +71,29 @@ class FirestoreGroupRepository(
         require(name.isNotEmpty()) { "그룹 이름이 비어 있다." }
 
         val groupRef = firestore.collection(Groups.COLLECTION).document()
-        val batch = firestore.batch()
-        batch.set(
-            groupRef,
+
+        // 배치로 묶지 않고 순서대로 쓴다. 보안 규칙은 배치 안의 쓰기를 '배치 전 상태'로 평가하므로,
+        // 한 배치에 그룹과 구성원 문서를 같이 넣으면 구성원 문서를 만들 때 그룹이 아직 없는 것으로
+        // 보여 규칙에 걸린다(firestore.rules 의 members/{memberId} create 참고).
+        groupRef.set(
             mapOf(
                 Groups.NAME to name,
                 Groups.OWNER_UID to ownerUid,
                 Groups.MEMBER_UIDS to listOf(ownerUid),
                 Groups.CREATED_AT to FieldValue.serverTimestamp(),
             ),
-        )
-        batch.set(
-            groupRef.collection(Groups.MEMBERS).document(ownerUid),
-            memberDocument(
-                displayName = ownerDisplayName,
-                consentVersion = TermsVersion.LOCATION_TERMS,
-                joinedWithCode = null,
-            ),
-        )
-        batch.commit().await()
+        ).await()
+
+        groupRef.collection(Groups.MEMBERS).document(ownerUid)
+            .set(
+                memberDocument(
+                    displayName = ownerDisplayName,
+                    consentVersion = TermsVersion.LOCATION_TERMS,
+                    joinedWithCode = null,
+                ),
+            )
+            .await()
+
         return groupRef.id
     }
 

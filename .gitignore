@@ -17,6 +17,13 @@ service-account*.json
 # Firebase Functions
 functions/node_modules/
 functions/lib/
+# Firebase 에뮬레이터 / 규칙 테스트
+tests/rules/node_modules/
+tests/rules/package-lock.json
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
 # OS
 .DS_Store
 Thumbs.db
