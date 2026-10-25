@@ -1,0 +1,191 @@
+name: 릴리스 AAB
+
+# 태그 `v*` 를 푸시하면 서명된 AAB(Android App Bundle)를 만들어 아티팩트로 올린다.
+# **Play 에 올리지는 않는다.** 업로드 단계는 아래에 주석으로만 두었다.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# 필요한 리포지토리 시크릿 (Settings > Secrets and variables > Actions)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# | 시크릿 | 내용 | 없으면 |
+# | --- | --- | --- |
+# | ANSIM_KEYSTORE_BASE64   | 업로드 키스토어(.jks)를 base64 로 인코딩한 문자열 | 바로 실패한다 |
+# | ANSIM_KEYSTORE_PASSWORD | 키스토어 비밀번호 | 서명 단계에서 실패한다 |
+# | ANSIM_KEY_ALIAS         | 키 별칭 | 같음 |
+# | ANSIM_KEY_PASSWORD      | 키 비밀번호 | 같음 |
+# | GOOGLE_SERVICES_JSON    | 실제 app/google-services.json 전문 | 자리표시자로 빌드하고 '올리지 말 것' 경고를 남긴다 |
+# | GOOGLE_WEB_CLIENT_ID    | Google 로그인 Web client ID | Google 로그인 버튼이 숨는다 |
+#
+# base64 만드는 법 (키스토어는 저장소에 넣지 않는다):
+#   Linux/macOS : base64 -w 0 upload-keystore.jks
+#   PowerShell  : [Convert]::ToBase64String([IO.File]::ReadAllBytes('upload-keystore.jks'))
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# 올리기 전에 반드시 확인할 것
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# 1. `versionCode` 는 app/build.gradle.kts 에 손으로 적는다(지금 1). Play 는 같은
+#    versionCode 를 두 번 받지 않으므로 태그를 붙이기 전에 올려야 한다.
+#    태그 이름에서 자동으로 만들지 않는 이유: 태그를 다시 붙이거나 이름을 잘못 적었을 때
+#    조용히 엉뚱한 versionCode 로 올라가는 쪽이 더 위험하다고 봤다.
+# 2. 자리표시자 google-services.json 으로 만든 AAB 는 **Play 에 올리면 안 된다.**
+#    Firebase 에 붙지 못해 로그인·그룹·푸시가 모두 동작하지 않는다.
+# 3. 서명 확인은 이 워크플로가 대신 한다(아래 'AAB 서명 확인' 단계).
+#    AAB 는 서명하지 않아도 파일 이름이 `app-release.aab` 그대로라서 눈으로는 구분되지 않는다.
+
+on:
+  push:
+    tags: ['v*']
+  # 태그를 붙이지 않고 한 번 돌려 보고 싶을 때 쓴다.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # 릴리스 빌드는 중간에 끊지 않는다.
+  cancel-in-progress: false
+
+jobs:
+  bundle:
+    name: 서명된 AAB 만들기
+    runs-on: ubuntu-latest
+
+    # `secrets` 는 step 의 `if:` 에서 쓸 수 없다(GitHub 문서의 컨텍스트 표).
+    # job 의 `env:` 에서는 쓸 수 있으므로 여기서 '있는지'만 참/거짓으로 바꿔 둔다.
+    # 비밀 값 자체를 job env 에 올리지 않는 것도 일부러다 — 쓰는 단계에서만 넣는다.
+    env:
+      HAS_SIGNING_SECRET: ${{ secrets.ANSIM_KEYSTORE_BASE64 != '' }}
+      HAS_GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
+
+    steps:
+      - name: 서명 시크릿 확인
+        if: env.HAS_SIGNING_SECRET != 'true'
+        # 서명하지 않은 AAB 는 Play 에 올릴 수 없다. 그래도 만들어 두면 '릴리스가 됐다'고
+        # 착각하게 되므로 빌드 전에 멈춘다.
+        run: |
+          echo "::error title=서명 시크릿이 없다::ANSIM_KEYSTORE_BASE64 와 비밀번호 시크릿을 넣어야 릴리스 AAB 를 만들 수 있다. 위 주석의 표를 참고."
+          exit 1
+
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v7
+
+      - name: JDK 21 설정
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Gradle 설정
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: gradlew 실행 권한 주기
+        run: chmod +x ./gradlew
+
+      - name: 실제 google-services.json 복원
+        if: env.HAS_GOOGLE_SERVICES == 'true'
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        # 명령줄이 아니라 환경 변수를 거쳐 쓴다. 명령줄에 넣으면 프로세스 목록에 남는다.
+        run: printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+
+      - name: 자리표시자 google-services.json 준비
+        if: env.HAS_GOOGLE_SERVICES != 'true'
+        run: |
+          ./scripts/fake-google-services.sh
+          echo "::warning title=자리표시자 설정으로 빌드함::GOOGLE_SERVICES_JSON 시크릿이 없다. 이 AAB 는 Firebase 에 붙지 못하므로 Play 에 올리지 말 것."
+
+      - name: 키스토어 복원
+        env:
+          ANSIM_KEYSTORE_BASE64: ${{ secrets.ANSIM_KEYSTORE_BASE64 }}
+        # 저장소 **밖**(RUNNER_TEMP)에 쓴다. 작업 폴더에 두면 나중에 단계를 하나 더했을 때
+        # 아티팩트에 담기거나 커밋될 수 있다.
+        run: |
+          printf '%s' "$ANSIM_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/ansim-upload.jks"
+          test -s "$RUNNER_TEMP/ansim-upload.jks"
+
+      - name: AAB 빌드
+        env:
+          ANSIM_KEYSTORE_PATH: ${{ runner.temp }}/ansim-upload.jks
+          ANSIM_KEYSTORE_PASSWORD: ${{ secrets.ANSIM_KEYSTORE_PASSWORD }}
+          ANSIM_KEY_ALIAS: ${{ secrets.ANSIM_KEY_ALIAS }}
+          ANSIM_KEY_PASSWORD: ${{ secrets.ANSIM_KEY_PASSWORD }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+        # 릴리스에서 치명적인 lint(lintVital)는 bundleRelease 가 알아서 돌린다.
+        run: ./gradlew bundleRelease --stacktrace
+
+      - name: AAB 서명 확인
+        # AAB 는 서명을 건너뛰어도 이름이 `app-release.aab` 그대로다.
+        # 서명 환경 변수에 오타가 있으면 app/build.gradle.kts 가 경고만 내고 넘어가므로
+        # (빌드를 깨지 않는 쪽을 골랐다) 여기서 결과물을 직접 본다.
+        #
+        # 두 가지를 본다.
+        # ① 서명 블록이 들어 있는지 — zip 안을 직접 본다. 서명하지 않은 AAB 에는
+        #    META-INF/*.RSA 와 *.SF 가 없다(로컬에서 두 경우를 열어 확인했다).
+        # ② 서명이 유효한지 — jarsigner. **`-strict` 를 쓰지 않는다.** 업로드 키는
+        #    자체 서명(self-signed)이라 신뢰 체인을 검증할 수 없고, `-strict` 는 그
+        #    경고(chainNotValidated)를 0 이 아닌 종료 코드로 바꾼다. 정상적으로 서명한
+        #    AAB 에서도 실패하게 된다.
+        run: |
+          aab=app/build/outputs/bundle/release/app-release.aab
+          test -f "$aab"
+          if ! unzip -l "$aab" | grep -qE 'META-INF/[A-Z0-9_]+\.(RSA|DSA|EC)$'; then
+            echo "::error title=서명되지 않은 AAB::서명 블록이 없다. ANSIM_* 시크릿 이름과 값을 확인할 것."
+            exit 1
+          fi
+          jarsigner -verify "$aab"
+          echo "서명 확인: OK"
+
+      - name: AAB 올리기
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-release-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+      - name: 난독화 매핑 파일 올리기
+        # Play Console 에 올려야 난독화된 크래시 스택을 읽을 수 있다.
+        # 저장소에 커밋하지 않는다(빌드마다 다르고 60MB 가 넘는다).
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-mapping
+          path: |
+            app/build/outputs/mapping/release/mapping.txt
+            app/build/outputs/native-debug-symbols/release/native-debug-symbols.zip
+          if-no-files-found: warn
+
+      - name: 키스토어 지우기
+        if: always()
+        # 러너는 작업이 끝나면 버려지지만, 단계를 더했을 때 키가 남지 않도록 명시적으로 지운다.
+        run: rm -f "$RUNNER_TEMP/ansim-upload.jks"
+
+      # ───────────────────────────────────────────────────────────────────────
+      # Play 업로드 (하지 않았다 — 주석으로만 둔다)
+      # ───────────────────────────────────────────────────────────────────────
+      #
+      # 이 저장소에는 Play Console 계정이 없어서 **한 번도 실행해 보지 않았다.**
+      # 아래는 공식 문서를 보고 적은 초안이다. 켜기 전에 확인할 것:
+      #
+      # 1. 첫 AAB 는 Play Console 웹에서 직접 올린다. 앱이 Play 에 아직 없으면
+      #    API 업로드가 되지 않는다(앱을 만들고 첫 릴리스를 올린 뒤에 API 가 열린다).
+      # 2. 서비스 계정을 만들어 Play Console > 사용자 및 권한에서 초대하고
+      #    '앱 릴리스 관리' 권한을 준다. 그 JSON 키를 PLAY_SERVICE_ACCOUNT_JSON
+      #    시크릿에 넣는다(functions/README.md 의 '방법 B' 와 같은 종류의 키다).
+      # 3. track 은 internal → alpha(비공개 테스트) → production 순서로 쓴다.
+      #    status: draft 로 두면 Play Console 에서 사람이 한 번 더 확인하고 내보낸다.
+      # 4. 데이터 보안 양식과 앱 콘텐츠 설문을 먼저 끝내야 트랙에 내보낼 수 있다
+      #    (docs/play/ 참고). 데이터 보안 양식은 비공개·공개 테스트에도 필요하다.
+      # 5. 서드파티 액션에 키를 넘기는 것이므로 쓰기 전에 그 액션의 소스를 읽고
+      #    커밋 SHA 로 고정하는 편이 낫다.
+      #
+      # - name: Play 내부 테스트 트랙에 올리기
+      #   uses: r0adkll/upload-google-play@v1
+      #   with:
+      #     serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+      #     packageName: io.github.ndrcb5210max.ansimlink
+      #     releaseFiles: app/build/outputs/bundle/release/app-release.aab
+      #     track: internal
+      #     status: draft
+      #     mappingFile: app/build/outputs/mapping/release/mapping.txt
+      #     debugSymbols: app/build/outputs/native-debug-symbols/release/native-debug-symbols.zip

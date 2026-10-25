@@ -29,9 +29,9 @@ import io.github.ndrcb5210max.ansimlink.ui.theme.AnsimLinkTheme
  * 위치정보법 제19조③은 위치정보를 제3자에게 제공할 때마다 '누구에게·언제·무슨 목적으로'
  * 제공했는지 즉시 알리고 그 내역을 확인할 수 있게 하라고 한다. 이 화면이 그 '확인'이다.
  *
- * **좌표는 보여 주지 않는다. 애초에 저장하지 않는다.** 제공 내역은 6개월 남아야 하는데
- * (제16조②) 좌표는 24시간 뒤 지워야 하므로(CLAUDE.md 원칙 4) 같은 자리에 둘 수 없다.
- * 그 사실을 화면 머리말에 적어 둔다.
+ * **좌표는 보여 주지 않는다. 애초에 저장하지 않는다.** 제공 내역은 약관에서 정한 기간
+ * (180일) 동안 남아야 하는데 좌표는 24시간 뒤 지워야 하므로(CLAUDE.md 원칙 4) 같은 자리에
+ * 둘 수 없다. 그 사실을 화면 머리말에 적어 둔다.
  */
 @Composable
 fun ProvisionLogScreen(
@@ -77,7 +77,8 @@ fun ProvisionLogScreen(
     }
 }
 
-/** 보관 기간을 '일' 단위로 보여 준다. */
+// 보관 기간을 '일' 단위로 보여 준다. 숫자는 저장소 상수 하나에서만 온다
+// (계정 삭제 화면도 같은 상수를 쓴다).
 private val RETENTION_DAYS: Int =
     (ProvisionRecordRepository.RETENTION_MILLIS / (24L * 60 * 60 * 1000)).toInt()
 

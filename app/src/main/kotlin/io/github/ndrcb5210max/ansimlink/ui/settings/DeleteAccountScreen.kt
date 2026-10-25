@@ -36,6 +36,7 @@ import io.github.ndrcb5210max.ansimlink.data.model.AnsimGroup
 import io.github.ndrcb5210max.ansimlink.data.model.GroupMember
 import io.github.ndrcb5210max.ansimlink.data.model.GroupWithMembers
 import io.github.ndrcb5210max.ansimlink.data.model.SignedInUser
+import io.github.ndrcb5210max.ansimlink.data.share.ProvisionRecordRepository
 import io.github.ndrcb5210max.ansimlink.ui.common.ErrorCard
 import io.github.ndrcb5210max.ansimlink.ui.common.ServerNotConfiguredCard
 import io.github.ndrcb5210max.ansimlink.ui.theme.AnsimLinkTheme
@@ -91,7 +92,7 @@ fun DeleteAccountScreen(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = stringResource(R.string.account_delete_retained),
+                    text = stringResource(R.string.account_delete_retained, RETENTION_DAYS),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -162,6 +163,12 @@ fun DeleteAccountScreen(
         }
     }
 }
+
+// 확인자료 보유 기간을 '일' 단위로 보여 준다. 숫자는 저장소 상수 하나에서만 온다.
+// 이 화면·제공 기록 화면·약관·처리방침이 같은 기간을 말해야 하기 때문이다
+// (ProvisionLogScreen 의 같은 상수, docs/legal/location-terms.md 제6조).
+private val RETENTION_DAYS: Int =
+    (ProvisionRecordRepository.RETENTION_MILLIS / (24L * 60 * 60 * 1000)).toInt()
 
 @Composable
 private fun ReauthenticationSection(
