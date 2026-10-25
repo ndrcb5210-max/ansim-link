@@ -1,0 +1,71 @@
+name: 문서 사이트 공개 (GitHub Pages)
+
+# docs/site 를 GitHub Pages 로 공개한다.
+# 개인정보 처리방침과 계정 삭제 안내는 Play Console 에 **URL 로** 넣어야 해서
+# 어딘가에 공개돼 있어야 한다(docs/play/data-safety.md, docs/RELEASE_CHECKLIST.md).
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# 켜기 전에 사람이 해야 하는 일
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Settings > Pages > Build and deployment > Source 를 **GitHub Actions** 로 바꾼다.
+# 바꾸지 않으면 이 워크플로의 배포 단계가 실패한다(Pages 가 켜져 있지 않다는 오류).
+#
+# 'Deploy from a branch' 를 쓰지 않는 이유: 그 방식은 사이트 뿌리를 `/` 또는 `/docs`
+# 중에서만 고를 수 있어서 `/docs/site` 를 지정할 수 없다. `/docs` 를 뿌리로 하면
+# devlog·prompts·screenshots 까지 사이트가 되고, 처리방침 URL 옆에 개발 기록이 같이
+# 공개된다. 그래서 Actions 로 docs/site 만 빌드한다.
+#
+# **이 저장소에서는 한 번도 실행해 보지 않았다**(Pages 를 켜지 않았다). 액션 버전과
+# 입력 이름은 actions/starter-workflows 의 pages/jekyll-gh-pages.yml 을 확인해 맞췄다.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/site/**'
+      - '.github/workflows/pages.yml'
+  # Pages 를 켠 뒤 처음 한 번 돌릴 때, 그리고 문서 변경 없이 다시 올릴 때 쓴다.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포가 겹치면 뒤에 올린 것이 먼저 끝날 수 있다. 줄을 세우고 중간에 끊지 않는다.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Jekyll 빌드
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v7
+
+      - name: Pages 설정
+        uses: actions/configure-pages@v5
+
+      - name: Jekyll 빌드 (docs/site 만)
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./docs/site
+          destination: ./_site
+
+      - name: 아티팩트 올리기
+        uses: actions/upload-pages-artifact@v3
+
+  deploy:
+    name: Pages 배포
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 배포
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -241,6 +241,10 @@ androidComponents {
 }
 
 tasks.withType<Test>().configureEach {
+    // 저장소 뿌리 경로를 테스트에 넘긴다. SiteDocumentsTest 가 docs/ 를 읽어야 하는데,
+    // 작업 디렉터리는 실행하는 쪽(Gradle, IDE)에 따라 달라서 기댈 수 없다.
+    systemProperty("ansim.repoRoot", rootProject.layout.projectDirectory.asFile.absolutePath)
+
     // Robolectric 4.17 은 SDK 36 환경을 만들 때(ApplicationSharedMemory) 리플렉션으로
     // jdk.internal.access.SharedSecrets 를 부른다. JDK 17 이상에서는 기본적으로 막혀 있어서
     // "Failed to interact with raw FileDescriptor internals" 로 모든 테스트가 실패한다.

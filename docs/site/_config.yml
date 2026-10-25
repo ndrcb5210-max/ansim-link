@@ -1,0 +1,20 @@
+# GitHub Pages(Jekyll) 설정. **이 폴더가 사이트 뿌리다**(저장소 뿌리가 아니다).
+#
+# 브랜치에서 바로 공개하는 방식("Deploy from a branch")은 뿌리를 `/` 또는 `/docs` 중에서만
+# 고를 수 있어서 `/docs/site` 를 쓸 수 없다. 그래서 GitHub Actions 로 공개한다
+# (.github/workflows/pages.yml). 그 워크플로가 이 폴더만 Jekyll 로 빌드한다.
+#
+# docs/ 전체를 공개하지 않는 이유: devlog·prompts·screenshots 까지 사이트가 되고,
+# 개인정보 처리방침 URL 옆에 개발 기록이 같이 공개된다. 공개할 것만 이 폴더에 둔다.
+
+title: 안심연결 (Ansim Link)
+description: >-
+  재난문자를 감지하면 안심 그룹 구성원에게 위치와 안심 메시지를 보내는 Android 앱의
+  약관·개인정보 처리방침·계정 삭제 안내.
+lang: ko-KR
+
+# minima 는 GitHub Pages 가 기본으로 들고 있는 테마라 Gemfile 없이 쓸 수 있다.
+theme: minima
+
+# 약관 문서는 docs/legal 에서 복사해 오는 사본이다(`./gradlew syncSiteDocuments`).
+# 원본을 고치고 그 명령을 돌리면 이 폴더의 파일도 같이 바뀐다.
