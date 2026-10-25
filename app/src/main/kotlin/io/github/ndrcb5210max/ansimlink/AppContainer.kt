@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.credentials.CredentialManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.functions.FirebaseFunctions
 import io.github.ndrcb5210max.ansimlink.data.ServerConfig
 import io.github.ndrcb5210max.ansimlink.data.ServerStatus
 import io.github.ndrcb5210max.ansimlink.data.account.AccountDeleter
@@ -14,6 +15,13 @@ import io.github.ndrcb5210max.ansimlink.data.alert.TriggerRulesStore
 import io.github.ndrcb5210max.ansimlink.data.auth.AuthRepository
 import io.github.ndrcb5210max.ansimlink.data.auth.FirebaseAuthRepository
 import io.github.ndrcb5210max.ansimlink.data.auth.GoogleSignInClient
+import io.github.ndrcb5210max.ansimlink.data.billing.BillingRepository
+import io.github.ndrcb5210max.ansimlink.data.billing.EntitlementRepository
+import io.github.ndrcb5210max.ansimlink.data.billing.FirestoreEntitlementRepository
+import io.github.ndrcb5210max.ansimlink.data.billing.FunctionsSubscriptionVerifier
+import io.github.ndrcb5210max.ansimlink.data.billing.PlanProvider
+import io.github.ndrcb5210max.ansimlink.data.billing.SubscriptionVerifier
+import io.github.ndrcb5210max.ansimlink.data.billing.createBillingRepository
 import io.github.ndrcb5210max.ansimlink.data.group.FirestoreGroupRepository
 import io.github.ndrcb5210max.ansimlink.data.group.GroupRepository
 import io.github.ndrcb5210max.ansimlink.data.message.SafetyMessageStore
@@ -89,5 +97,47 @@ class AppContainer(private val applicationContext: Context) {
     /** 위치 전송만 Firebase 가 필요하다. 설정이 없으면 건드리지 않는다. */
     val shareRepository: ShareRepository by lazy {
         FirestoreShareRepository(firestore)
+    }
+
+    // --- 5단계: 구독 결제 ---
+    //
+    // 구독 상태는 서버가 `users/{uid}.entitlement` 에 쓰고 앱은 읽기만 한다. 보안 규칙이
+    // 클라이언트 쓰기를 막는다. 서버 설정이 없으면(가짜 google-services.json) 늘 무료다.
+
+    val entitlementRepository: EntitlementRepository by lazy {
+        FirestoreEntitlementRepository(firestore)
+    }
+
+    /**
+     * 지금 요금제. **요금제를 보는 모든 곳이 이것 하나를 읽는다.**
+     *
+     * 그룹 한도·공유 시간 상한·유형별 메시지·결제 화면·설정 > 구독 다섯 곳이 각자
+     * 판정하면 서로 어긋난다([PlanProvider] 주석 참고).
+     */
+    val planProvider: PlanProvider by lazy {
+        PlanProvider(
+            authRepository = authRepository,
+            entitlements = entitlementRepository,
+            serverReady = isServerReady,
+            scope = AnsimLinkApplication.applicationScope,
+        )
+    }
+
+    /** 구매 토큰 검증 요청. 실제 검증은 서버(callable 함수)가 한다. */
+    val subscriptionVerifier: SubscriptionVerifier by lazy {
+        FunctionsSubscriptionVerifier(FirebaseFunctions.getInstance(FUNCTIONS_REGION))
+    }
+
+    /**
+     * Play 결제. 디버그 빌드에서는 가짜 저장소로 바꿀 수 있다
+     * (`app/src/debug/.../BillingRepositoryFactory.kt`).
+     */
+    val billingRepository: BillingRepository by lazy {
+        createBillingRepository(applicationContext)
+    }
+
+    private companion object {
+        /** functions/src/index.ts 의 REGION 과 같아야 한다. 다르면 함수를 못 찾는다. */
+        const val FUNCTIONS_REGION = "asia-northeast3"
     }
 }
