@@ -375,5 +375,16 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if signedIn() && isGroupOwner(resource.data.groupId);
     }
+
+    // ---- purchaseTokens ----
+    //
+    // (5단계) 구매 토큰의 SHA-256 → uid 매핑. **서버만 쓰고 읽는다.**
+    //
+    // 규칙이 없으면 기본이 거부이므로 이 블록이 없어도 막힌다. 그래도 적어 두는 이유:
+    // 나중에 이 컬렉션을 보고 '규칙이 없네, 빠뜨렸나' 하고 열어 주는 일을 막으려는 것이다.
+    // 서버(Admin SDK)는 보안 규칙을 통과하지 않으므로 함수는 그대로 쓸 수 있다.
+    match /purchaseTokens/{tokenHash} {
+      allow read, write: if false;
+    }
   }
 }
