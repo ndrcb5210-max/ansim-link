@@ -23,8 +23,7 @@ import io.github.ndrcb5210max.ansimlink.ui.theme.AnsimLinkTheme
 /**
  * 설정 화면에 들어갈 항목.
  *
- * 4단계에서 '위치 공유'·'안심 메시지'·'내 위치 제공 기록'이 눌린다.
- * '구독'(5단계)은 아직 자리만 있다.
+ * 5단계에서 '구독'까지 모두 눌린다.
  *
  * 순서는 '무엇이 일어나는가 → 무엇을 보낼 것인가 → 무엇이 일어났는가' 로 두었다.
  * 감지 설정·발동 규칙(감지) → 위치 공유·안심 메시지(발동) → 발동 기록·제공 기록(확인).
@@ -80,6 +79,10 @@ private enum class DebugEntry(
         R.string.settings_debug_observed_title,
         R.string.settings_debug_observed_description,
     ),
+    FakeBilling(
+        R.string.settings_debug_fake_billing_title,
+        R.string.settings_debug_fake_billing_description,
+    ),
 }
 
 /**
@@ -97,8 +100,10 @@ fun SettingsScreen(
     onOpenSafetyMessage: () -> Unit = {},
     onOpenProvisionLog: () -> Unit = {},
     onOpenAccount: () -> Unit = {},
+    onOpenSubscription: () -> Unit = {},
     onOpenTestAlert: () -> Unit = {},
     onOpenObservedPackages: () -> Unit = {},
+    onOpenFakeBilling: () -> Unit = {},
     onOpenLegalDocument: (LegalDocument) -> Unit = {},
 ) {
     Column(
@@ -121,8 +126,7 @@ fun SettingsScreen(
                     SettingsEntry.AlertLog -> onOpenAlertLog
                     SettingsEntry.ProvisionLog -> onOpenProvisionLog
                     SettingsEntry.Account -> onOpenAccount
-                    // 5단계에서 연결한다.
-                    SettingsEntry.Subscription -> null
+                    SettingsEntry.Subscription -> onOpenSubscription
                 },
             )
         }
@@ -147,6 +151,7 @@ fun SettingsScreen(
                     onClick = when (entry) {
                         DebugEntry.TestAlert -> onOpenTestAlert
                         DebugEntry.ObservedPackages -> onOpenObservedPackages
+                        DebugEntry.FakeBilling -> onOpenFakeBilling
                     },
                 )
             }

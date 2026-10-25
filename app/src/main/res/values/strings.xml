@@ -136,6 +136,7 @@
     <string name="common_cancel">취소</string>
     <string name="common_back">뒤로</string>
     <string name="common_close">닫기</string>
+    <string name="common_confirm">확인</string>
 
     <!-- 오류 문구 -->
     <string name="error_network">네트워크에 연결할 수 없습니다. 연결을 확인하고 다시 시도해 주세요.</string>
@@ -398,4 +399,111 @@
     <string name="debug_test_alert_send">%1$s로 보내기</string>
     <string name="debug_test_alert_sent">테스트 알림을 띄웠습니다. 알림창과 발동 기록을 확인해 주세요.</string>
     <string name="debug_test_alert_failed">알림 권한이 꺼져 있어 띄울 수 없습니다. 감지 설정 화면에서 알림 권한을 켜 주세요.</string>
+
+    <!-- 구독 결제 (5단계) -->
+    <!--
+      금액은 여기에 적지 않는다. Play 에서 받은 formattedPrice 를 그대로 끼워 넣는다
+      (나라마다 통화·자리수가 다르고, 적은 금액과 청구 금액이 어긋나면 정책 위반이다).
+    -->
+    <string name="paywall_title">프리미엄 구독</string>
+    <string name="paywall_subtitle">그룹과 구성원을 더 두고, 공유 시간을 늘리고, 재난 유형별 안심 메시지를 쓸 수 있습니다.</string>
+
+    <string name="paywall_table_feature">항목</string>
+    <string name="paywall_table_free">무료</string>
+    <string name="paywall_table_premium">프리미엄</string>
+    <string name="paywall_feature_groups">안심 그룹</string>
+    <string name="paywall_feature_members">그룹 구성원</string>
+    <string name="paywall_feature_duration">공유 시간</string>
+    <string name="paywall_feature_messages">안심 메시지</string>
+    <string name="paywall_count_groups">%1$d개</string>
+    <string name="paywall_count_members">%1$d명</string>
+    <string name="paywall_count_minutes">최대 %1$d분</string>
+    <string name="paywall_messages_free">공통 1개</string>
+    <string name="paywall_messages_premium">재난 유형별</string>
+    <string name="paywall_table_note">재난문자 감지, 위치 공유, 제공 기록, 동의 철회·일시중지는 무료에서도 똑같이 동작합니다. 구독은 한도만 늘립니다.</string>
+
+    <string name="paywall_subscribe">구독하기</string>
+    <string name="paywall_subscribe_with_trial">무료로 시작하기</string>
+    <string name="paywall_auto_renew_notice">매월 자동 갱신됩니다. 해지할 때까지 결제가 이어지고, 언제든 Google Play 구독 화면에서 해지할 수 있습니다. 해지하면 이미 결제한 기간이 끝날 때까지 쓸 수 있습니다.</string>
+    <string name="paywall_trial_conversion">무료 체험 %1$s이 끝나면 %2$s이 자동으로 결제됩니다. 그 전에 해지하면 결제되지 않습니다.</string>
+    <string name="paywall_price_source">금액과 결제 주기는 Google Play 에서 받아 온 값입니다. 세금·수수료에 따라 결제 화면의 금액과 다를 수 있습니다.</string>
+    <string name="paywall_legal_note">구독하면 아래 약관과 처리방침이 적용됩니다.</string>
+
+    <string name="billing_manage">구독 관리</string>
+    <string name="billing_retry">다시 시도</string>
+    <string name="billing_verifying">구매를 확인하고 있습니다…</string>
+    <string name="billing_purchase_in_progress">Google Play 결제 창을 열고 있습니다…</string>
+    <string name="billing_price_unavailable_title">지금은 금액을 받아 올 수 없습니다</string>
+
+    <!-- 가격을 못 받은 이유. 코드를 그대로 보여 주지 않고 '할 수 있는 일'까지 적는다. -->
+    <string name="billing_unavailable_network">네트워크에 연결할 수 없어 Google Play 에서 금액을 받아 오지 못했습니다. 연결을 확인하고 다시 시도해 주세요.</string>
+    <string name="billing_unavailable_play_store">이 기기에서 Google Play 결제를 쓸 수 없습니다. Play 스토어 앱이 설치·업데이트되어 있고 로그인되어 있는지 확인해 주세요.</string>
+    <string name="billing_unavailable_subscriptions">이 기기의 Google Play 버전은 구독 결제를 지원하지 않습니다. Play 스토어를 업데이트해 주세요.</string>
+    <string name="billing_unavailable_product">구독 상품을 찾을 수 없습니다. Google Play 에서 설치한 앱이 아니면 결제를 쓸 수 없습니다.</string>
+    <string name="billing_unavailable_server">이 빌드에는 서버 설정이 없어 구독을 시험할 수 없습니다.</string>
+    <string name="billing_unavailable_unknown">금액을 받아 오지 못했습니다. 잠시 뒤 다시 시도해 주세요.</string>
+
+    <!-- 한 번 띄우는 안내 -->
+    <string name="billing_notice_activated">구독이 확인되었습니다. 프리미엄 한도가 적용됩니다.</string>
+    <string name="billing_notice_verification_pending">결제는 끝났지만 확인이 늦어지고 있습니다. 잠시 뒤 ‘구독 상태 다시 확인’을 눌러 주세요. 결제된 금액은 그대로 남아 있습니다.</string>
+    <string name="billing_notice_purchase_pending">결제가 진행 중입니다. 결제가 끝나면 프리미엄이 자동으로 켜집니다.</string>
+    <string name="billing_notice_cancelled">결제를 취소했습니다. 결제된 금액은 없습니다.</string>
+    <string name="billing_notice_rejected">Google Play 에서 이 구독을 확인하지 못했습니다. 결제·환불 내역은 Google Play 구독 화면에서 확인해 주세요.</string>
+    <string name="billing_notice_failed">결제를 끝내지 못했습니다. 잠시 뒤 다시 시도해 주세요.</string>
+    <string name="billing_notice_restored">이미 하고 있는 구독을 찾아 적용했습니다.</string>
+
+    <!-- 구독 상태 -->
+    <string name="billing_current_free">무료 요금제</string>
+    <string name="billing_current_premium">프리미엄 구독 중</string>
+    <string name="billing_next_renewal">다음 결제일: %1$s</string>
+    <string name="billing_ends_at">해지 예약됨 · %1$s까지 쓸 수 있습니다</string>
+    <string name="billing_verified_at">서버가 마지막으로 확인한 날: %1$s</string>
+    <string name="billing_state_none">구독한 적이 없습니다.</string>
+    <string name="billing_state_pending">결제가 아직 끝나지 않았습니다.</string>
+    <string name="billing_state_active">정상적으로 결제되고 있습니다.</string>
+    <string name="billing_state_canceled">해지했습니다. 이미 결제한 기간까지 쓸 수 있습니다.</string>
+    <string name="billing_state_grace">결제에 실패했습니다. 결제 수단을 고치는 동안 프리미엄은 그대로 쓸 수 있습니다.</string>
+    <string name="billing_state_on_hold">결제가 보류되어 프리미엄이 꺼졌습니다.</string>
+    <string name="billing_state_paused">구독을 일시정지했습니다. 다시 시작하면 프리미엄이 켜집니다.</string>
+    <string name="billing_state_expired">구독 기간이 끝났습니다.</string>
+    <string name="billing_state_revoked">구독이 회수되었습니다.</string>
+    <string name="billing_state_unknown">구독 상태를 확인하지 못했습니다.</string>
+    <string name="billing_payment_fix_title">결제 수단을 고쳐 주세요</string>
+    <string name="billing_payment_fix_grace">Google Play 구독 화면에서 결제 수단을 고치면 그대로 이어집니다. 기간 안에 고치지 않으면 프리미엄이 꺼집니다.</string>
+    <string name="billing_payment_fix_on_hold">결제가 되지 않아 프리미엄이 꺼졌습니다. Google Play 구독 화면에서 결제 수단을 고치면 다시 켜집니다.</string>
+
+    <!-- 결제 주기 문구. Play 가 준 ISO 8601 기간을 읽어 만든다. -->
+    <string name="billing_period_unit_day">일</string>
+    <string name="billing_period_unit_week">주</string>
+    <string name="billing_period_unit_month">개월</string>
+    <string name="billing_period_unit_year">년</string>
+    <string name="billing_period_every_day">매일</string>
+    <string name="billing_period_every_week">매주</string>
+    <string name="billing_period_every_month">매월</string>
+    <string name="billing_period_every_year">매년</string>
+    <string name="billing_period_every_n">%1$d%2$s마다</string>
+    <string name="billing_period_length">%1$d%2$s</string>
+    <string name="billing_step_repeating">%1$s %2$s</string>
+    <string name="billing_step_free_trial">처음 %1$s 무료</string>
+    <string name="billing_step_intro">처음 %1$s %2$s</string>
+    <string name="billing_step_intro_cycles">처음 %1$d회(%2$s마다) %3$s</string>
+
+    <!-- 설정 &gt; 구독 -->
+    <string name="subscription_current_limits_title">지금 적용되는 한도</string>
+    <string name="subscription_see_premium">프리미엄 한도 보기</string>
+    <string name="subscription_recheck">구독 상태 다시 확인</string>
+    <string name="subscription_manage_note">해지·결제 수단 변경·일시정지는 Google Play 구독 화면에서 합니다. 앱에서 해지할 수는 없습니다.</string>
+    <string name="subscription_delete_account_note">계정을 삭제해도 Google Play 구독은 해지되지 않습니다. 계정 삭제 전에 Google Play 에서 먼저 해지해 주세요.</string>
+
+    <!-- 공유 시간 안내에 붙는 구독 링크 -->
+    <string name="share_duration_premium_cta">프리미엄 한도 보기</string>
+
+    <!-- 가짜 결제 (디버그 전용) -->
+    <string name="settings_debug_fake_billing_title">가짜 결제 저장소</string>
+    <string name="settings_debug_fake_billing_description">Play Console 없이 결제 화면 흐름을 시험합니다.</string>
+    <string name="debug_fake_billing_title">가짜 결제 저장소</string>
+    <string name="debug_fake_billing_body">Google Play 를 부르지 않고 결제 화면의 흐름만 시험합니다. 고른 값은 앱을 다시 시작한 뒤에 적용됩니다.</string>
+    <string name="debug_fake_billing_limit">가짜 결제로는 프리미엄이 열리지 않습니다. 프리미엄을 여는 근거는 서버가 쓴 users/{uid}.entitlement 하나이고, 보안 규칙이 앱의 쓰기를 막습니다.</string>
+    <string name="debug_fake_billing_real">쓰지 않음(실제 Google Play 결제)</string>
+    <string name="debug_fake_billing_current">지금 설정: %1$s</string>
 </resources>

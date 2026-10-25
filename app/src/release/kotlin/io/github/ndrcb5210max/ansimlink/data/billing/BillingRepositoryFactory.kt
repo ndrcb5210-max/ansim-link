@@ -13,6 +13,3 @@ import android.content.Context
  */
 fun createBillingRepository(context: Context): BillingRepository =
     PlayBillingRepository(context)
-
-/** 릴리스 빌드에는 가짜 결제가 없다. 디버그 메뉴도 보이지 않는다. */
-val fakeBillingAvailable: Boolean = false

@@ -25,9 +25,6 @@ fun createBillingRepository(context: Context): BillingRepository {
     }
 }
 
-/** 디버그 빌드에는 가짜 결제가 있다. 설정 화면에 메뉴를 보여 준다. */
-val fakeBillingAvailable: Boolean = true
-
 /**
  * 가짜 결제 설정.
  *
