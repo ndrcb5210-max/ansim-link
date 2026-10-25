@@ -1,0 +1,14 @@
+{
+  // 단위 테스트용. 테스트 파일까지 같이 컴파일해서 lib-test/ 로 내보낸다.
+  //
+  // 왜 따로 두는가: 배포에 올라가는 lib/ 에는 테스트 코드가 들어가면 안 된다.
+  // node --test 는 .ts 를 바로 돌리지 못하므로(ts-node 를 넣지 않았다) 컴파일해서 돌린다.
+  // 의존성을 하나라도 줄이는 쪽을 골랐다.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "lib-test",
+    "sourceMap": false
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": []
+}

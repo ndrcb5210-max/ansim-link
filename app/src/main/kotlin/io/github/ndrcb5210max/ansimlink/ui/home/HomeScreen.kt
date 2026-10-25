@@ -7,8 +7,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -17,20 +20,31 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.ndrcb5210max.ansimlink.R
+import io.github.ndrcb5210max.ansimlink.ui.share.ShareBlockMessages
+import io.github.ndrcb5210max.ansimlink.ui.share.ShareUiState
 import io.github.ndrcb5210max.ansimlink.ui.theme.AnsimLinkTheme
 
 /**
  * 홈 화면.
  *
- * 3단계에서 '재난문자 감지' 카드가 실제 상태를 보여 준다. '위치 공유' 카드는 4단계에서 연결한다.
+ * 카드 두 개. '재난문자 감지'(3단계)와 '위치 공유'(4단계).
  *
- * @param detecting 알림 접근이 켜져 있고 리스너가 연결돼 있는지.
+ * 공유 중일 때 이 카드가 **앱 안 배너** 역할을 한다(CLAUDE.md 원칙 2: 공유하는 동안에는
+ * 상시 알림과 앱 안 배너를 항상 보여 준다). 상시 알림과 같은 내용을 적는다 —
+ * 어느 그룹, 몇 명, 언제 시작, 언제 끝. 그리고 [지금 중지]를 둔다(원칙 3).
+ *
+ * @param share 공유 상태. 시각은 미리 문자열로 받는다(스크린샷을 고정하려는 것).
  */
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     detecting: Boolean = false,
+    share: ShareUiState = ShareUiState(loading = false),
     onOpenDetectionSetup: () -> Unit = {},
+    onStartSharing: () -> Unit = {},
+    onStopSharing: () -> Unit = {},
+    onOpenFamilyLocation: () -> Unit = {},
+    onOpenShareSettings: () -> Unit = {},
 ) {
     Column(
         modifier = modifier
@@ -64,11 +78,116 @@ fun HomeScreen(
             actionLabel = stringResource(R.string.home_detection_open),
             onAction = onOpenDetectionSetup,
         )
-        StatusCard(
-            title = stringResource(R.string.home_sharing_title),
-            state = stringResource(R.string.home_sharing_state_idle),
-            description = stringResource(R.string.home_sharing_description),
+
+        ShareCard(
+            share = share,
+            onStartSharing = onStartSharing,
+            onStopSharing = onStopSharing,
+            onOpenFamilyLocation = onOpenFamilyLocation,
+            onOpenShareSettings = onOpenShareSettings,
         )
+    }
+}
+
+/**
+ * 위치 공유 카드.
+ *
+ * 공유 중이면 눈에 띄는 색(primaryContainer)으로 바꾼다. 홈 화면을 열었을 때
+ * '지금 내 위치가 나가고 있다'를 한눈에 알아야 한다.
+ */
+@Composable
+private fun ShareCard(
+    share: ShareUiState,
+    onStartSharing: () -> Unit,
+    onStopSharing: () -> Unit,
+    onOpenFamilyLocation: () -> Unit,
+    onOpenShareSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = if (share.sharing) {
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+        } else {
+            CardDefaults.cardColors()
+        },
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.home_sharing_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = stringResource(
+                    if (share.sharing) {
+                        R.string.home_sharing_state_active
+                    } else {
+                        R.string.home_sharing_state_idle
+                    },
+                ),
+                style = MaterialTheme.typography.headlineSmall,
+                color = if (share.sharing) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+            )
+
+            if (share.sharing) {
+                // 상시 알림과 같은 내용을 적는다. 둘이 다르면 어느 쪽을 믿어야 할지 모른다.
+                Text(
+                    text = stringResource(
+                        R.string.home_sharing_active_description,
+                        share.groupLabel,
+                        share.endsText,
+                        share.remainingMinutes,
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = stringResource(R.string.home_sharing_write_count, share.writeCount),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                // '지금 중지'를 가장 누르기 쉬운 자리에 둔다(원칙 3).
+                Button(onClick = onStopSharing, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.home_sharing_stop))
+                }
+            } else {
+                Text(
+                    text = stringResource(R.string.home_sharing_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                // 못 시작하는 이유가 있으면 버튼을 누르기 전에 보여 준다.
+                share.blockReason?.let { reason ->
+                    Text(
+                        text = stringResource(ShareBlockMessages.messageRes(reason)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                OutlinedButton(
+                    onClick = onStartSharing,
+                    enabled = share.canStart,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.home_sharing_start))
+                }
+            }
+
+            TextButton(onClick = onOpenFamilyLocation) {
+                Text(stringResource(R.string.home_sharing_open_family))
+            }
+            TextButton(onClick = onOpenShareSettings) {
+                Text(stringResource(R.string.home_sharing_open_settings))
+            }
+        }
     }
 }
 

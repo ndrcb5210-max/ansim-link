@@ -20,12 +20,13 @@ import io.github.ndrcb5210max.ansimlink.domain.alert.AlertPackages
 /**
  * 재난문자를 감지했을 때 띄우는 알림.
  *
- * 3단계에서는 **묻기만 한다.** '공유 시작'·'안심 메시지만 보내기'를 눌러도 지금은 로그만 남고
- * 위치를 수집하거나 메시지를 보내지 않는다(그 연결은 4단계).
- *
  * 왜 알림으로 묻는가(CLAUDE.md 3장): Google Play 는 포그라운드 서비스 위치 사용을
  * '사용자가 시작한 동작의 연장'으로 본다. 기본 모드는 '한 번 눌러 시작'이라서
  * 배경 위치 권한이 필요 없다.
+ *
+ * 4단계에서 버튼 세 개를 실제로 연결했다([AlertActionReceiver]).
+ * 공유 중 상시 알림은 채널이 다르다([ShareNotifications]) — 사용자가 이 발동 알림을
+ * 꺼도 '공유 중' 알림은 남아야 한다.
  */
 object AlertNotifications {
 
@@ -88,17 +89,17 @@ object AlertNotifications {
             .addAction(
                 R.drawable.ic_notification_alert,
                 context.getString(R.string.trigger_action_share),
-                actionIntent(context, AlertActionReceiver.ACTION_START_SHARING, 1),
+                actionIntent(context, AlertActionReceiver.ACTION_START_SHARING, 1, classification),
             )
             .addAction(
                 R.drawable.ic_notification_alert,
                 context.getString(R.string.trigger_action_message_only),
-                actionIntent(context, AlertActionReceiver.ACTION_MESSAGE_ONLY, 2),
+                actionIntent(context, AlertActionReceiver.ACTION_MESSAGE_ONLY, 2, classification),
             )
             .addAction(
                 R.drawable.ic_notification_alert,
                 context.getString(R.string.trigger_action_dismiss),
-                actionIntent(context, AlertActionReceiver.ACTION_DISMISS, 3),
+                actionIntent(context, AlertActionReceiver.ACTION_DISMISS, 3, classification),
             )
             .build()
 
@@ -138,14 +139,22 @@ object AlertNotifications {
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 
+    /**
+     * 알림 버튼의 인텐트. 어떤 재난문자였는지 같이 실어 보낸다.
+     *
+     * 4단계에서 extras 를 더했다. 안심 메시지를 고를 때 재난 유형이 필요하고
+     * (프리미엄은 유형별 문구), 서버가 보낼 알림에도 종류·유형이 들어간다.
+     */
     private fun actionIntent(
         context: Context,
         action: String,
         requestCode: Int,
-    ): PendingIntent = PendingIntent.getBroadcast(
-        context,
-        requestCode,
-        Intent(context, AlertActionReceiver::class.java).setAction(action),
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        classification: AlertClassification,
+    ): PendingIntent = AlertActionReceiver.pendingIntent(
+        context = context,
+        action = action,
+        requestCode = requestCode,
+        severity = classification.severity,
+        type = classification.type,
     )
 }

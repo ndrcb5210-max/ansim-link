@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// 안심연결 Firestore 보안 규칙 (2단계)
+// 안심연결 Firestore 보안 규칙 (2·4단계)
 //
 // 문서 구조는 app/.../data/FirestoreSchema.kt 주석과 같다. 한쪽만 고치면 안 된다.
 // 규칙 테스트는 tests/rules/ 에 있다.
@@ -10,6 +10,11 @@ rules_version = '2';
 // 2. 자기 구성원 문서만 쓴다. 남의 공유 상태를 바꿀 수 없다.
 // 3. 유효한 초대 코드가 있어야만 그룹에 들어온다.
 // 4. 위치 제공에 동의하지 않으면 구성원이 될 수 없다(consent.location == true 강제).
+// 5. (4단계) 위치는 **동의했고 일시중지가 아닌 본인만** 쓴다. 규칙에서 막는다.
+//    앱 코드가 틀려도 동의 없는 위치가 서버에 올라가지 못하게 하려는 것이다.
+// 6. (4단계) 안심 메시지는 그룹 구성원이 자기 이름으로만 만든다. 남의 이름으로 보낼 수 없다.
+// 7. (4단계) 제공 내역(provisionLogs)은 **고칠 수 없다.** 종료 시각만 한 번 채운다.
+//    위치정보법 제16조의 '확인자료'라서 나중에 바꿀 수 있으면 뜻이 없다.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -162,8 +167,33 @@ service cloud.firestore {
                          );
 
         // 일시중지·재개는 본인만. 동의 자체를 true 로 되돌리는 것도 본인만 할 수 있다.
+        //
+        // 4단계에서 두 필드가 늘었다. pushToken(FCM 토큰 사본)과 sharing(공유 중 표시)이다.
+        // 둘 다 본인만 쓴다.
+        //
+        // sharing.endsAt 에 상한을 둔 이유: 이 값이 '지금 공유 중인가'의 근거다
+        // (GroupMember.sharingNow). 아무 값이나 넣을 수 있으면 10년 뒤를 적어 두고
+        // 영원히 '공유 중'으로 보이게 만들 수 있다. 공유는 길어도 180분이므로
+        // 여유를 조금 두어 185분으로 막는다.
+        //
+        // **sharing 이 실제로 바뀔 때만** 검사한다(diff). 'sharing 이 들어 있으면'으로
+        // 검사하면 안 된다. update 의 request.resource.data 는 쓰고 난 **뒤의 문서 전체**라서,
+        // 앱이 죽어 sharing.active 가 true 로 남고 endsAt 이 과거가 된 상태에서는
+        // pushToken 이나 paused 를 고치는 쓰기까지 모두 막힌다. 그러면 사용자가
+        // '일시중지'를 누를 수 없게 되어 원칙 1(철회·중지는 즉시)을 어긴다.
+        function validSharingWindow() {
+          return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['sharing'])
+              || request.resource.data.sharing.active == false
+              || (
+                   request.resource.data.sharing.endsAt is int
+                   && request.resource.data.sharing.endsAt
+                        <= request.time.toMillis() + 185 * 60 * 1000
+                 );
+        }
+
         allow update: if isSelf(memberId)
-                      && request.resource.data.displayName == resource.data.displayName;
+                      && request.resource.data.displayName == resource.data.displayName
+                      && validSharingWindow();
 
         // 동의 철회는 본인이, 그룹 해산은 만든 사람이 지운다.
         allow delete: if isSelf(memberId) || isGroupOwner(groupId);
@@ -180,14 +210,121 @@ service cloud.firestore {
 
       // ---- groups/{gid}/locations/{uid} ----
       //
-      // 4단계에서 쓴다. 지금은 계정 삭제·동의 철회 때 지우기만 한다.
-      // 동의했고 일시중지가 아닌 본인만 쓸 수 있다.
+      // 구성원별 **마지막 위치 1건**. 이동 경로를 쌓지 않으므로 문서 ID 가 uid 다.
+      //
+      // 쓰기 조건이 이 규칙 파일에서 가장 중요하다. 앱 코드에 버그가 있어도
+      // 동의하지 않은 사람의 위치가 서버에 올라가서는 안 된다(CLAUDE.md 원칙 1).
+      // 그래서 구성원 문서를 읽어(get 1회 비용) 동의와 일시중지를 둘 다 확인한다.
       match /locations/{memberId} {
+
+        function myMemberDocument() {
+          return get(
+            /databases/$(database)/documents/groups/$(groupId)/members/$(memberId)
+          ).data;
+        }
+
+        // 동의했고(consent.location == true) 일시중지가 아닌(paused == false) 상태.
+        // paused 까지 보는 이유: '일시중지'는 위치정보법 제24조의 '수집 일시중지'다.
+        // 그 상태에서 위치가 올라가면 법도 사용자 기대도 어긋난다.
+        function sharingAllowed() {
+          return myMemberDocument().consent.location == true
+              && myMemberDocument().paused == false;
+        }
+
+        // 보낼 수 있는 필드만. 다른 필드를 끼워 넣어 위치 문서를 다른 용도로
+        // 쓰지 못하게 막는다(예: 메모를 붙여 쪽지처럼 쓰는 것).
+        function validLocationShape() {
+          return request.resource.data.keys().hasOnly(
+                   ['lat', 'lng', 'accuracy', 'at', 'sessionId', 'expiresAt'])
+              && request.resource.data.lat is number
+              && request.resource.data.lng is number
+              && request.resource.data.lat >= -90 && request.resource.data.lat <= 90
+              && request.resource.data.lng >= -180 && request.resource.data.lng <= 180
+              && request.resource.data.at is int
+              && request.resource.data.expiresAt is int
+              && request.resource.data.sessionId is string;
+        }
+
         allow read: if isGroupMember(groupId);
-        allow write: if isSelf(memberId)
-                     && get(/databases/$(database)/documents/groups/$(groupId)/members/$(memberId))
-                          .data.consent.location == true;
+        allow create, update: if isSelf(memberId)
+                             && sharingAllowed()
+                             && validLocationShape();
+        // 지우는 쪽은 넓게 허용한다. 동의 철회·계정 삭제·그룹 해산 때 지워야 하고,
+        // 줄이는 방향은 막을 이유가 없다.
         allow delete: if isSelf(memberId) || isGroupOwner(groupId);
+      }
+
+      // ---- groups/{gid}/alerts/{alertId} ----
+      //
+      // 안심 메시지. 앱이 만들고 서버(onAlertCreated)가 읽어 FCM 으로 보낸다.
+      //
+      // 고칠 수 없게 둔다(update 금지). 보낸 메시지를 나중에 바꾸면 받은 사람이 본 것과
+      // 서버에 남은 것이 달라진다.
+      match /alerts/{alertId} {
+        allow read: if isGroupMember(groupId);
+
+        allow create: if isGroupMember(groupId)
+                      && request.resource.data.keys().hasOnly(
+                           ['senderUid', 'senderName', 'severity', 'type',
+                            'message', 'sharing', 'createdAt'])
+                      // 남의 이름으로 보낼 수 없다.
+                      && request.resource.data.senderUid == uid()
+                      && request.resource.data.senderName is string
+                      && request.resource.data.message is string
+                      && request.resource.data.message.size() > 0
+                      // 앱의 SafetyMessages.MAX_LENGTH 와 같은 값이다.
+                      && request.resource.data.message.size() <= 200
+                      && request.resource.data.sharing is bool
+                      && request.resource.data.createdAt is int;
+
+        allow update: if false;
+        // 받는 쪽이 지울 수는 없다. 보낸 사람과 그룹을 만든 사람만.
+        allow delete: if signedIn()
+                      && (resource.data.senderUid == uid() || isGroupOwner(groupId));
+      }
+
+      // ---- groups/{gid}/provisionLogs/{logId} ----
+      //
+      // 위치정보법 제19조③의 제공 내역. **좌표가 들어 있지 않다.**
+      //
+      // 읽기를 본인만으로 좁혔다. 다른 구성원이 '누가 언제 위치를 제공했는지' 목록을
+      // 훑을 수 있으면 그것 자체가 감시 도구가 된다(원칙 10). 내 위치가 제공됐다는
+      // 사실은 공유 중 표시(members.sharing)로 이미 서로 보인다.
+      //
+      // 고칠 수 없다. 단 하나, **아직 비어 있는 endedAt 을 한 번 채우는 것**만 허용한다.
+      // 종료 시각은 공유가 끝날 때 알 수 있으므로 미리 적을 수 없다.
+      match /provisionLogs/{logId} {
+        // get 과 list 를 같은 조건으로 둔다. 목록 조회(list)를 아예 막으면 안 되는데,
+        // 앱이 공유를 끝낼 때 `uid == 나 && sessionId == 이 세션` 으로 **조회해서**
+        // 종료 시각을 채우기 때문이다(FirestoreShareRepository.endSharing).
+        // 규칙이 list 를 평가할 때는 질의가 이 조건을 보장해야 통과하므로,
+        // 남의 내역을 훑는 질의는 그대로 막힌다.
+        allow get, list: if signedIn() && resource.data.uid == uid();
+
+        allow create: if isGroupMember(groupId)
+                      && request.resource.data.keys().hasOnly(
+                           ['uid', 'sessionId', 'purpose', 'receiverUids',
+                            'startedAt', 'plannedEndAt', 'endedAt'])
+                      && request.resource.data.uid == uid()
+                      && request.resource.data.sessionId is string
+                      && request.resource.data.purpose is string
+                      && request.resource.data.startedAt is int
+                      && request.resource.data.plannedEndAt is int
+                      // 만들 때는 반드시 비어 있어야 한다. 처음부터 '끝났다'고 적어 두고
+                      // 위치를 보내는 것을 막는다.
+                      && request.resource.data.endedAt == null;
+
+        allow update: if signedIn()
+                      && resource.data.uid == uid()
+                      && resource.data.endedAt == null
+                      && request.resource.data.endedAt is int
+                      // endedAt 말고는 아무것도 바뀌지 않아야 한다.
+                      && request.resource.data.diff(resource.data)
+                           .affectedKeys().hasOnly(['endedAt']);
+
+        // 계정 삭제 때도 지우지 않는다. 제16조② 보관 의무가 있고 좌표가 없기 때문이다.
+        // 그 사실을 계정 삭제 화면에 적어 두었다(account_delete_retained).
+        allow delete: if false;
       }
     }
 

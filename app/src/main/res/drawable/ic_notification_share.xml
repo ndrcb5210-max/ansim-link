@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  위치 공유 알림 아이콘. 안드로이드가 모양만 쓰고 색은 시스템이 입히므로
+  단색 실루엣으로만 둔다(지도 핀).
+
+  발동 알림(ic_notification_alert, 느낌표 삼각형)과 모양을 다르게 두었다.
+  상태 표시줄에서 '재난문자를 감지했다'와 '지금 공유 중이다'를 구분할 수 있어야 한다.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M12,2C8.13,2 5,5.13 5,9c0,5.25 7,13 7,13s7,-7.75 7,-13c0,-3.87 -3.13,-7 -7,-7zM12,11.5c-1.38,0 -2.5,-1.12 -2.5,-2.5s1.12,-2.5 2.5,-2.5 2.5,1.12 2.5,2.5 -1.12,2.5 -2.5,2.5z" />
+</vector>

@@ -16,6 +16,11 @@ import io.github.ndrcb5210max.ansimlink.data.auth.FirebaseAuthRepository
 import io.github.ndrcb5210max.ansimlink.data.auth.GoogleSignInClient
 import io.github.ndrcb5210max.ansimlink.data.group.FirestoreGroupRepository
 import io.github.ndrcb5210max.ansimlink.data.group.GroupRepository
+import io.github.ndrcb5210max.ansimlink.data.message.SafetyMessageStore
+import io.github.ndrcb5210max.ansimlink.data.share.FirestoreShareRepository
+import io.github.ndrcb5210max.ansimlink.data.share.ProvisionRecordRepository
+import io.github.ndrcb5210max.ansimlink.data.share.ShareRepository
+import io.github.ndrcb5210max.ansimlink.data.share.ShareSettingsStore
 
 /**
  * 수동 주입 컨테이너(CLAUDE.md: DI 는 단순하게 AppContainer 로).
@@ -65,5 +70,24 @@ class AppContainer(private val applicationContext: Context) {
 
     val alertDetector: AlertDetector by lazy {
         AlertDetector(alertEventRepository, triggerRulesStore)
+    }
+
+    // --- 4단계: 위치 공유와 안심 메시지 ---
+    //
+    // 설정(공유 시간·자동 시작)과 안심 메시지 원고는 기기 안에만 있다. 제공 기록도 기기에
+    // 사본을 둔다(서버 사본은 Firestore 에 따로 남는다). 그래서 '서버 설정이 필요합니다'
+    // 상태에서도 이 셋은 그대로 동작한다. 실제 위치 전송만 Firebase 가 필요하다.
+
+    val shareSettingsStore: ShareSettingsStore by lazy { ShareSettingsStore(applicationContext) }
+
+    val safetyMessageStore: SafetyMessageStore by lazy { SafetyMessageStore(applicationContext) }
+
+    val provisionRecordRepository: ProvisionRecordRepository by lazy {
+        ProvisionRecordRepository(database.provisionRecords())
+    }
+
+    /** 위치 전송만 Firebase 가 필요하다. 설정이 없으면 건드리지 않는다. */
+    val shareRepository: ShareRepository by lazy {
+        FirestoreShareRepository(firestore)
     }
 }

@@ -96,4 +96,35 @@ jobs:
 
       - name: 규칙 테스트
         working-directory: tests/rules
+        # 에뮬레이터가 끝나지 않고 매달리면 작업 전체가 6시간 돌 수 있다.
+        # 로컬에서 한 번 그런 일이 있었다(docs/devlog/04-share-message.md).
+        timeout-minutes: 15
+        run: npm test
+
+  functions:
+    name: Cloud Functions 빌드·단위 테스트
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v7
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: 의존성 설치
+        working-directory: functions
+        run: npm install --no-audit --no-fund
+
+      # 배포는 하지 않는다. Blaze 요금제가 필요하다(functions/README.md).
+      - name: 타입 검사와 빌드
+        working-directory: functions
+        run: npm run build
+
+      - name: 단위 테스트
+        working-directory: functions
+        # 에뮬레이터가 필요 없는 순수 함수 테스트다.
+        timeout-minutes: 10
         run: npm test
