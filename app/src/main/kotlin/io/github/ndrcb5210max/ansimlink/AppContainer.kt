@@ -7,6 +7,10 @@ import com.google.firebase.firestore.FirebaseFirestore
 import io.github.ndrcb5210max.ansimlink.data.ServerConfig
 import io.github.ndrcb5210max.ansimlink.data.ServerStatus
 import io.github.ndrcb5210max.ansimlink.data.account.AccountDeleter
+import io.github.ndrcb5210max.ansimlink.data.alert.AlertDetector
+import io.github.ndrcb5210max.ansimlink.data.alert.AlertEventRepository
+import io.github.ndrcb5210max.ansimlink.data.alert.AnsimDatabase
+import io.github.ndrcb5210max.ansimlink.data.alert.TriggerRulesStore
 import io.github.ndrcb5210max.ansimlink.data.auth.AuthRepository
 import io.github.ndrcb5210max.ansimlink.data.auth.FirebaseAuthRepository
 import io.github.ndrcb5210max.ansimlink.data.auth.GoogleSignInClient
@@ -44,5 +48,22 @@ class AppContainer(private val applicationContext: Context) {
 
     val accountDeleter: AccountDeleter by lazy {
         AccountDeleter(firestore, authRepository, groupRepository)
+    }
+
+    // --- 3단계: 재난문자 감지 ---
+    //
+    // 아래는 Firebase 와 상관이 없다. 감지·발동 기록·발동 규칙은 모두 기기 안에서만 돌고
+    // 서버로 아무것도 보내지 않으므로, '서버 설정이 필요합니다' 상태에서도 그대로 동작한다.
+
+    private val database: AnsimDatabase by lazy { AnsimDatabase.create(applicationContext) }
+
+    val alertEventRepository: AlertEventRepository by lazy {
+        AlertEventRepository(database.alertEvents(), database.observedPackages())
+    }
+
+    val triggerRulesStore: TriggerRulesStore by lazy { TriggerRulesStore(applicationContext) }
+
+    val alertDetector: AlertDetector by lazy {
+        AlertDetector(alertEventRepository, triggerRulesStore)
     }
 }

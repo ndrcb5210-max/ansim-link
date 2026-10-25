@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  2단계까지도 위험 권한은 하나도 선언하지 않는다. 로그인·그룹·동의는 네트워크만 쓰고,
-  INTERNET 권한은 Firebase SDK 매니페스트에서 병합되어 들어온다.
-  알림 접근(재난문자 감지)은 3단계, 위치는 4단계에서 설명 화면을 먼저 보여 준 뒤 추가한다.
-  SEND_SMS / READ_SMS 는 어떤 단계에서도 추가하지 않는다.
+  위험 권한은 아직 하나도 없다. 위치 권한은 4단계에서 설명 화면을 먼저 보여 준 뒤 추가한다.
+  SEND_SMS / READ_SMS 는 어떤 단계에서도 추가하지 않는다(CLAUDE.md 원칙 5).
+
+  3단계에서 추가한 것:
+  - POST_NOTIFICATIONS: 재난문자를 감지했을 때 '위치를 공유할까요?' 알림을 띄우려면 필요하다
+    (Android 13 부터 런타임 권한). 거절해도 앱은 돌아가고, 발동 기록 화면에서 확인할 수 있다.
+  - 알림 접근(NotificationListenerService): 권한 선언이 아니라 서비스 선언이다.
+    사용자가 시스템 설정에서 직접 켜야 하고, 런타임 권한 요청으로는 받을 수 없다.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".AnsimLinkApplication"
@@ -26,6 +32,29 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+          재난문자 앱이 띄운 알림을 읽는 리스너.
+
+          BIND_NOTIFICATION_LISTENER_SERVICE 는 시스템만 가질 수 있는 권한이라,
+          여기에 적어 두면 '시스템만 이 서비스를 묶을 수 있다'는 뜻이 된다.
+          허용 목록 밖 알림은 서비스 안에서 곧바로 버린다
+          (io/github/ndrcb5210max/ansimlink/domain/alert/AlertPackages.kt).
+        -->
+        <service
+            android:name=".service.DisasterAlertListenerService"
+            android:exported="true"
+            android:label="@string/detection_service_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!-- 발동 알림의 버튼(공유 시작 / 안심 메시지만 보내기 / 닫기)을 받는다. -->
+        <receiver
+            android:name=".service.AlertActionReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>

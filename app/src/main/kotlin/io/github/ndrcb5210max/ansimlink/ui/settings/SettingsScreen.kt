@@ -23,12 +23,12 @@ import io.github.ndrcb5210max.ansimlink.ui.theme.AnsimLinkTheme
 /**
  * 설정 화면에 들어갈 항목.
  *
- * 2단계에서 '계정'과 '약관과 방침'이 눌린다. 나머지는 3~5단계에서 연결한다.
+ * 3단계에서 '재난문자 감지 권한'·'발동 규칙'·'발동 기록'이 눌린다.
+ * '안심 메시지'(4단계)와 '구독'(5단계)은 아직 자리만 있다.
  */
 private enum class SettingsEntry(
     @param:StringRes val titleRes: Int,
     @param:StringRes val descriptionRes: Int,
-    val enabled: Boolean = false,
 ) {
     DetectionPermission(
         R.string.settings_detection_permission_title,
@@ -37,6 +37,10 @@ private enum class SettingsEntry(
     Rules(
         R.string.settings_rules_title,
         R.string.settings_rules_description,
+    ),
+    AlertLog(
+        R.string.settings_alert_log_title,
+        R.string.settings_alert_log_description,
     ),
     SafetyMessage(
         R.string.settings_message_title,
@@ -49,14 +53,38 @@ private enum class SettingsEntry(
     Account(
         R.string.settings_account_title,
         R.string.settings_account_description,
-        enabled = true,
     ),
 }
 
+/** 디버그 빌드에서만 보이는 항목. */
+private enum class DebugEntry(
+    @param:StringRes val titleRes: Int,
+    @param:StringRes val descriptionRes: Int,
+) {
+    TestAlert(
+        R.string.settings_debug_test_alert_title,
+        R.string.settings_debug_test_alert_description,
+    ),
+    ObservedPackages(
+        R.string.settings_debug_observed_title,
+        R.string.settings_debug_observed_description,
+    ),
+}
+
+/**
+ * @param showDebugEntries 디버그 빌드인지. 화면이 `BuildConfig` 를 직접 보지 않게 해서
+ *   스크린샷 테스트에서 둘 다 찍을 수 있게 한다.
+ */
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
+    showDebugEntries: Boolean = false,
+    onOpenDetectionSetup: () -> Unit = {},
+    onOpenRules: () -> Unit = {},
+    onOpenAlertLog: () -> Unit = {},
     onOpenAccount: () -> Unit = {},
+    onOpenTestAlert: () -> Unit = {},
+    onOpenObservedPackages: () -> Unit = {},
     onOpenLegalDocument: (LegalDocument) -> Unit = {},
 ) {
     Column(
@@ -71,20 +99,19 @@ fun SettingsScreen(
             SettingsRow(
                 titleRes = entry.titleRes,
                 descriptionRes = entry.descriptionRes,
-                onClick = if (entry == SettingsEntry.Account && entry.enabled) {
-                    onOpenAccount
-                } else {
-                    null
+                onClick = when (entry) {
+                    SettingsEntry.DetectionPermission -> onOpenDetectionSetup
+                    SettingsEntry.Rules -> onOpenRules
+                    SettingsEntry.AlertLog -> onOpenAlertLog
+                    SettingsEntry.Account -> onOpenAccount
+                    // 4·5단계에서 연결한다.
+                    SettingsEntry.SafetyMessage, SettingsEntry.Subscription -> null
                 },
             )
         }
 
         HorizontalDivider()
-        Text(
-            text = stringResource(R.string.settings_legal_title),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
-        )
+        SectionTitle(stringResource(R.string.settings_legal_title))
         LegalDocument.entries.forEach { document ->
             SettingsRow(
                 titleRes = document.titleRes(),
@@ -92,7 +119,31 @@ fun SettingsScreen(
                 onClick = { onOpenLegalDocument(document) },
             )
         }
+
+        if (showDebugEntries) {
+            HorizontalDivider()
+            SectionTitle(stringResource(R.string.settings_debug_title))
+            DebugEntry.entries.forEach { entry ->
+                SettingsRow(
+                    titleRes = entry.titleRes,
+                    descriptionRes = entry.descriptionRes,
+                    onClick = when (entry) {
+                        DebugEntry.TestAlert -> onOpenTestAlert
+                        DebugEntry.ObservedPackages -> onOpenObservedPackages
+                    },
+                )
+            }
+        }
     }
+}
+
+@Composable
+private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        modifier = modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
+    )
 }
 
 @Composable
@@ -123,7 +174,7 @@ private fun LegalDocument.titleRes(): Int = when (this) {
     LegalDocument.LocationTerms -> R.string.legal_location_title
 }
 
-@Preview(showBackground = true, heightDp = 800)
+@Preview(showBackground = true, heightDp = 900)
 @Composable
 private fun SettingsScreenPreview() {
     AnsimLinkTheme {
