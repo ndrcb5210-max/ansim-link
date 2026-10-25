@@ -296,7 +296,11 @@ com.android.cellbroadcastreceiver.module
 - [ ] 서명된 AAB 를 만들고 `jarsigner -verify -strict` 로 확인
 - [ ] 앱 안 약관 = 공개된 약관 (`SiteDocumentsTest` 통과 + 공개 URL 열어 보기)
 - [ ] 약관·처리방침·계정 삭제 안내·앱 화면이 **같은 보유 기간(180일)** 을 말하는지
-- [ ] `[ ]` 자리표시자가 남아 있지 않은지 — `grep -rn "\[사업자 상호\]\|\[고객문의 이메일\]" docs/`
+- [ ] `[ ]` 자리표시자가 남아 있지 않은지 — 공개되는 문서만 본다(devlog·prompts 에는 남아도 된다)
+      ```
+      grep -rn "\[사업자 상호\]\|\[고객문의 이메일\]\|\[처리방침 URL\]" \
+        docs/legal docs/site docs/account-deletion.md
+      ```
 - [ ] 스토어 설명에 '감시', '몰래', '추적', '놓치지 않습니다' 같은 말이 없는지
 - [ ] 스토어 설명에 '재난문자 감지를 보장하지 않는다'가 적혀 있는지
 - [ ] 비밀 정보가 커밋되지 않았는지 — `git log -p` 에서 키스토어·서비스 계정 키·
