@@ -185,7 +185,7 @@ private fun ShareCard(
                 Text(stringResource(R.string.home_sharing_open_family))
             }
             TextButton(onClick = onOpenShareSettings) {
-                Text(stringResource(R.string.settings_share_title))
+                Text(stringResource(R.string.home_sharing_open_settings))
             }
         }
     }

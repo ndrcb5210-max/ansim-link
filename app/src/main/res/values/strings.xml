@@ -297,6 +297,8 @@
     <string name="home_sharing_start">지금 공유</string>
     <string name="home_sharing_stop">지금 중지</string>
     <string name="home_sharing_open_family">가족 위치 보기</string>
+    <!-- 카드 제목이 이미 '위치 공유'라서 설정으로 가는 줄은 다르게 적는다. -->
+    <string name="home_sharing_open_settings">공유 시간·자동 시작 설정</string>
     <string name="home_sharing_write_count">위치를 %1$d번 보냈습니다.</string>
 
     <!-- 위치 권한 설명 화면 (명시적 공개) -->
