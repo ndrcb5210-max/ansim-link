@@ -36,6 +36,83 @@ val googleWebClientId: String = run {
     (fromProperties ?: System.getenv("GOOGLE_WEB_CLIENT_ID") ?: "").trim()
 }
 
+// 릴리스 서명에 쓸 값 묶음. 네 개가 모두 있을 때만 만든다.
+class ReleaseSigning(
+    val storeFile: File,
+    val storePassword: String,
+    val keyAlias: String,
+    val keyPassword: String,
+)
+
+// 릴리스 서명 설정은 환경 변수로만 받는다(6단계).
+//
+// 키스토어와 비밀번호는 저장소에 넣지 않는다(CLAUDE.md 원칙 6). .gitignore 가
+// *.jks, *.keystore, keystore.properties 를 막아 두었지만 그것만 믿지 않는다 —
+// 빌드 스크립트에 경로나 비밀번호를 적을 자리를 아예 두지 않는다.
+//
+// 값이 없으면 **빌드를 실패시키지 않고** 서명만 건너뛴다. CI 의 디버그 빌드와 다른 사람의
+// 로컬 빌드는 키 없이 돌아야 한다.
+//
+// 주의: APK 는 서명을 건너뛰면 파일 이름에 `-unsigned` 가 붙지만 **AAB 는 붙지 않는다.**
+// 서명 없이 만든 것도 `app-release.aab` 그대로다(직접 확인했다). 그래서 릴리스 워크플로
+// (.github/workflows/release.yml)가 만든 뒤에 서명 블록이 있는지 따로 검사한다.
+//
+// 경로는 rootProject 기준으로 푼다(절대 경로는 그대로 쓴다). app/ 기준으로 풀면
+// 같은 상대 경로가 명령을 어디서 실행했는지에 따라 다른 파일을 가리킨다.
+val releaseSigning: ReleaseSigning? = run {
+    fun read(name: String): String? = System.getenv(name)?.trim()?.takeIf { it.isNotEmpty() }
+
+    val variableNames = listOf(
+        "ANSIM_KEYSTORE_PATH",
+        "ANSIM_KEYSTORE_PASSWORD",
+        "ANSIM_KEY_ALIAS",
+        "ANSIM_KEY_PASSWORD",
+    )
+    val values = variableNames.associateWith(::read)
+    val missing = variableNames.filter { values[it] == null }
+
+    when {
+        // 하나도 없는 것은 평소 상태다. 경고로 띄우면 디버그 빌드마다 울려서
+        // 정작 '일부만 설정됐다'는 경고가 묻힌다.
+        missing.size == variableNames.size -> {
+            logger.lifecycle(
+                "[ansim-link] 릴리스 서명 환경 변수가 없어 릴리스 서명을 건너뛴다. " +
+                    "필요한 값: " + variableNames.joinToString(", ") +
+                    " (docs/RELEASE_CHECKLIST.md 참고)",
+            )
+            null
+        }
+
+        // 일부만 설정된 것은 거의 틀림없이 실수다(오타, CI 시크릿 누락). 경고로 알린다.
+        missing.isNotEmpty() -> {
+            logger.warn(
+                "[ansim-link] 경고: 릴리스 서명 환경 변수가 일부만 설정됐다. 빠진 값: " +
+                    missing.joinToString(", ") + ". 릴리스 서명을 건너뛴다.",
+            )
+            null
+        }
+
+        else -> {
+            val keystore = rootProject.file(values.getValue("ANSIM_KEYSTORE_PATH")!!)
+            if (keystore.isFile) {
+                ReleaseSigning(
+                    storeFile = keystore,
+                    storePassword = values.getValue("ANSIM_KEYSTORE_PASSWORD")!!,
+                    keyAlias = values.getValue("ANSIM_KEY_ALIAS")!!,
+                    keyPassword = values.getValue("ANSIM_KEY_PASSWORD")!!,
+                )
+            } else {
+                // 비밀번호는 로그에 찍지 않는다. 경로만 적는다.
+                logger.warn(
+                    "[ansim-link] 경고: ANSIM_KEYSTORE_PATH 가 가리키는 키스토어 파일이 없다 " +
+                        "(" + keystore.absolutePath + "). 릴리스 서명을 건너뛴다.",
+                )
+                null
+            }
+        }
+    }
+}
+
 android {
     namespace = "io.github.ndrcb5210max.ansimlink"
     compileSdk = 36
@@ -50,6 +127,19 @@ android {
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"" + googleWebClientId + "\"")
     }
 
+    signingConfigs {
+        // 환경 변수가 네 개 다 있을 때만 만든다. 빈 값으로 설정을 만들어 두면
+        // 서명 단계에서 'password must not be null' 같은 오류로 뒤늦게 깨진다.
+        releaseSigning?.let { signing ->
+            create("release") {
+                storeFile = signing.storeFile
+                storePassword = signing.storePassword
+                keyAlias = signing.keyAlias
+                keyPassword = signing.keyPassword
+            }
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
@@ -61,7 +151,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // 서명 설정은 6단계(출시 준비)에서 환경 변수로 넣는다. 키스토어는 저장소에 두지 않는다.
+            // 환경 변수가 없으면 null 이 되어 서명하지 않는다(위 releaseSigning 참고).
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 
