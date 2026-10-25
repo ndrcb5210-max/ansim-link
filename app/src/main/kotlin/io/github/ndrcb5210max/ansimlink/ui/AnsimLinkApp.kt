@@ -1,8 +1,8 @@
 package io.github.ndrcb5210max.ansimlink.ui
 
 import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -138,13 +139,18 @@ private fun MainShell(container: AppContainer, modifier: Modifier = Modifier) {
         )
     }
 
-    Scaffold(
-        modifier = modifier,
-        bottomBar = {
-            if (Routes.isTopLevel(currentRoute)) {
-                AnsimBottomBar(navController = navController, currentRoute = currentRoute)
+    AnsimTabScaffold(
+        // 최상위 경로가 아니면(그룹 만들기, 계정 삭제 등) 하단 탭을 숨긴다.
+        selectedTab = AnsimTab.entries.firstOrNull { it.route == currentRoute },
+        onSelectTab = { tab ->
+            navController.navigate(tab.route) {
+                // 탭을 눌러도 백스택이 쌓이지 않게 한다.
+                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
             }
         },
+        modifier = modifier,
     ) { innerPadding ->
         NavHost(
             navController = navController,
@@ -234,7 +240,7 @@ private fun MainShell(container: AppContainer, modifier: Modifier = Modifier) {
                     onChoiceChange = accountViewModel::setChoice,
                     onOpenSubscriptions = {
                         context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse(PLAY_SUBSCRIPTIONS_URL)),
+                            Intent(Intent.ACTION_VIEW, PLAY_SUBSCRIPTIONS_URL.toUri()),
                         )
                     },
                     onDelete = accountViewModel::deleteAccount,
@@ -247,27 +253,43 @@ private fun MainShell(container: AppContainer, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * 하단 탭이 달린 바깥 틀.
+ *
+ * 내비게이션을 모르는 순수한 화면이라 스크린샷 테스트에서도 그대로 쓴다.
+ *
+ * @param selectedTab 지금 선택된 탭. null 이면 하단 탭을 숨긴다(탭 위에 올라온 화면).
+ */
 @Composable
-private fun AnsimBottomBar(navController: NavHostController, currentRoute: String?) {
-    NavigationBar {
-        AnsimTab.entries.forEach { tab ->
-            NavigationBarItem(
-                selected = currentRoute == tab.route,
-                onClick = {
-                    if (currentRoute != tab.route) {
-                        navController.navigate(tab.route) {
-                            // 탭을 눌러도 백스택이 쌓이지 않게 한다.
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+fun AnsimTabScaffold(
+    selectedTab: AnsimTab?,
+    onSelectTab: (AnsimTab) -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    Scaffold(
+        modifier = modifier,
+        bottomBar = {
+            if (selectedTab != null) {
+                NavigationBar {
+                    AnsimTab.entries.forEach { tab ->
+                        NavigationBarItem(
+                            selected = selectedTab == tab,
+                            onClick = { if (selectedTab != tab) onSelectTab(tab) },
+                            icon = {
+                                Icon(
+                                    painter = painterResource(tab.iconRes),
+                                    contentDescription = null,
+                                )
+                            },
+                            label = { Text(stringResource(tab.labelRes)) },
+                        )
                     }
-                },
-                icon = { Icon(painter = painterResource(tab.iconRes), contentDescription = null) },
-                label = { Text(stringResource(tab.labelRes)) },
-            )
-        }
-    }
+                }
+            }
+        },
+        content = content,
+    )
 }
 
 /** 약관 보기 화면. 로그인 전·후 양쪽 그래프에 같이 넣는다. */

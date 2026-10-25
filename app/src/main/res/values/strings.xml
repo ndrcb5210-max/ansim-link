@@ -29,7 +29,6 @@
     <string name="group_invite_valid">%1$d분 동안 쓸 수 있습니다.</string>
     <string name="group_invite_help">이 코드를 초대할 사람에게 직접 전해 주세요. 코드를 받은 사람은 동의 화면을 거쳐야 그룹에 들어옵니다.</string>
     <string name="group_invite_copy">코드 복사</string>
-    <string name="group_invite_copied">초대 코드를 복사했습니다.</string>
     <string name="group_members_title">구성원</string>
     <string name="group_my_share_title">내 공유 상태</string>
     <string name="group_my_share_description">언제든지 바꿀 수 있고 바로 반영됩니다.</string>
@@ -132,10 +131,8 @@
 
     <!-- 공통 -->
     <string name="common_cancel">취소</string>
-    <string name="common_confirm">확인</string>
     <string name="common_back">뒤로</string>
     <string name="common_close">닫기</string>
-    <string name="common_retry">다시 시도</string>
 
     <!-- 오류 문구 -->
     <string name="error_network">네트워크에 연결할 수 없습니다. 연결을 확인하고 다시 시도해 주세요.</string>
@@ -163,5 +160,4 @@
     <string name="settings_account_title">계정</string>
     <string name="settings_account_description">로그인, 로그아웃, 계정 삭제.</string>
     <string name="settings_legal_title">약관과 방침</string>
-    <string name="settings_legal_description">이용약관, 개인정보 처리방침, 위치기반서비스 이용약관.</string>
 </resources>
