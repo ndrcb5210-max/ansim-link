@@ -74,7 +74,8 @@ inviteCodes/{code}                 groupId, groupName, memberNames[], expiresAt,
 
 - 화면은 모두 `UiState` 와 콜백만 받는 함수다. ViewModel 이 저장소를 부른다.
   덕분에 Firebase 없이 미리보기와 스크린샷을 찍을 수 있다.
-- 단위 테스트 **78개** 통과. 스크린샷 9장을 `docs/screenshots/02/` 에 만들었다.
+- 테스트 **78개** 통과(단위 66개 + 스크린샷 12개). 스크린샷은 1단계 3장 + 2단계 9장이고,
+  2단계 그림은 `docs/screenshots/02/` 에 있다.
 - `./gradlew lint testDebugUnitTest assembleDebug` 통과. lint 오류 0개, 경고 12개
   (전부 1단계에서 일부러 고정한 버전 관련 경고다. 새로 늘어난 경고는 없다).
 
