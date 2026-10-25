@@ -17,6 +17,9 @@ service-account*.json
 # Firebase Functions
 functions/node_modules/
 functions/lib/
+# 테스트용 컴파일 결과(tsconfig.test.json 이 여기로 내보낸다)
+functions/lib-test/
+functions/package-lock.json
 # Firebase 에뮬레이터 / 규칙 테스트
 tests/rules/node_modules/
 tests/rules/package-lock.json

@@ -1,0 +1,26 @@
+{
+  "name": "ansim-link-functions",
+  "version": "0.0.0",
+  "private": true,
+  "description": "안심연결 Cloud Functions (그룹 푸시 발송, 세션 정리)",
+  "type": "commonjs",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "test": "tsc -p tsconfig.test.json && node --test lib-test/**/*.test.js",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "deploy": "npm run build && firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}
