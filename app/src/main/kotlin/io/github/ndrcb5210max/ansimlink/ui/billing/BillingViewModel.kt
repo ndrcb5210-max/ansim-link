@@ -285,6 +285,7 @@ class BillingViewModel(
     ): PaywallUiState {
         val productId = entitlement.productId
             ?: billingState.offers.firstOrNull()?.productId
+        val nowMillis = System.currentTimeMillis()
         return PaywallUiState(
             loading = billingState.connecting,
             serverReady = serverReady,
@@ -301,6 +302,8 @@ class BillingViewModel(
             renewalDateText = entitlement.expiryTimeMillis
                 .takeIf { it > 0L }
                 ?.let { dateFormat.format(Date(it)) },
+            // 화면이 시계를 모르므로 '지난 날짜인가'를 여기서 판단해 넘긴다.
+            renewalDatePast = entitlement.expiryTimeMillis in 1 until nowMillis,
             verifiedAtText = entitlement.verifiedAtMillis
                 .takeIf { it > 0L }
                 ?.let { dateFormat.format(Date(it)) },

@@ -3,6 +3,7 @@ package io.github.ndrcb5210max.ansimlink.data.billing
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import androidx.core.content.edit
 
 /**
  * 디버그 빌드의 결제 저장소. 설정에서 '가짜 결제'를 고르면 [FakeBillingRepository] 를 쓴다.
@@ -43,9 +44,9 @@ object FakeBillingSettings {
     }
 
     fun setScenario(context: Context, scenario: FakeBillingScenario?) {
-        preferences(context).edit().apply {
+        preferences(context).edit {
             if (scenario == null) remove(KEY_SCENARIO) else putString(KEY_SCENARIO, scenario.name)
-        }.apply()
+        }
     }
 
     private fun preferences(context: Context): SharedPreferences =

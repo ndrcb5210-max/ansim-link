@@ -169,12 +169,15 @@ internal fun SubscriptionStatusLines(state: PaywallUiState, modifier: Modifier =
         state.renewalDateText?.let { dateText ->
             Text(
                 text = stringResource(
-                    // 자동 갱신이 켜져 있으면 '다음 결제일', 해지해 두었으면 '종료 예정일'.
-                    // 두 경우에 같은 문구를 쓰면 해지한 사람이 또 결제되는 줄 안다.
-                    if (state.entitlement.autoRenewing) {
-                        R.string.billing_next_renewal
-                    } else {
-                        R.string.billing_ends_at
+                    when {
+                        // 이미 지난 날짜다. 보류·만료·회수가 여기로 온다 — 보류는
+                        // autoRenewing 이 true 로 남아 있어서 그것만 보면 '다음 결제일'
+                        // 이 되는데, 지난 날짜에 그렇게 적으면 미래 일처럼 보인다.
+                        state.renewalDatePast -> R.string.billing_ended_at
+                        // 해지해 두었다. '다음 결제일'과 같은 문구를 쓰면 또 결제되는
+                        // 줄 안다.
+                        !state.entitlement.autoRenewing -> R.string.billing_ends_at
+                        else -> R.string.billing_next_renewal
                     },
                     dateText,
                 ),

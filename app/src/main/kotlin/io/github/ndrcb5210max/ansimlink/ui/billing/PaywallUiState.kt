@@ -17,6 +17,12 @@ import io.github.ndrcb5210max.ansimlink.domain.group.Plan
  * @param unavailable 가격을 못 받은 이유. 화면이 이것을 사람 말로 적는다.
  * @param manageUrl Google Play 구독 관리(해지) 링크.
  * @param renewalDateText "2026년 11월 24일" 처럼 미리 만든 문자열. 구독이 없으면 null.
+ * @param renewalDatePast [renewalDateText] 가 **이미 지난 날짜**인지.
+ *
+ *   화면이 그 날짜에 뭐라고 붙일지가 달라진다. 보류 상태의 구독은 `autoRenewing` 이
+ *   true 로 남아 있는데 기간은 과거다. 그때 '다음 결제일'이라고 적으면 지난 날짜가
+ *   미래 일처럼 보인다. 판단에 시계가 필요해서 ViewModel 이 미리 넣는다
+ *   (화면은 시계를 모른다 — 2~4단계와 같은 방식).
  * @param verifiedAtText 서버가 마지막으로 확인한 시각. 구독이 없으면 null.
  * @param verifying 구매 토큰 검증을 기다리는 중. 결제 직후 잠깐 true 다.
  * @param notice 화면 위에 한 번 띄울 안내. 사용자가 읽으면 비운다.
@@ -32,6 +38,7 @@ data class PaywallUiState(
     val verifying: Boolean = false,
     val manageUrl: String = "",
     val renewalDateText: String? = null,
+    val renewalDatePast: Boolean = false,
     val verifiedAtText: String? = null,
     val notice: PaywallNotice? = null,
 ) {

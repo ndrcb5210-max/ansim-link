@@ -457,6 +457,7 @@
     <string name="billing_current_premium">프리미엄 구독 중</string>
     <string name="billing_next_renewal">다음 결제일: %1$s</string>
     <string name="billing_ends_at">해지 예약됨 · %1$s까지 쓸 수 있습니다</string>
+    <string name="billing_ended_at">%1$s에 기간이 끝났습니다</string>
     <string name="billing_verified_at">서버가 마지막으로 확인한 날: %1$s</string>
     <string name="billing_state_none">구독한 적이 없습니다.</string>
     <string name="billing_state_pending">결제가 아직 끝나지 않았습니다.</string>
